@@ -45,16 +45,41 @@ adapter.on('stateChange', function (id, state) {
 
 // Some message was sent to adapter instance over message box. Used by email, pushover, text2speech, ...
 adapter.on('message', function (obj) {
+    adapter.log.info('zont-online ');
     if (typeof obj == 'object' && obj.message) {
-        if (obj.command == 'send') {
-            // e.g. send email or pushover or whatever
-            console.log('send command');
+        switch (obj.command) {
+            case 'send':
+                // e.g. send email or pushover or whatever
+                console.log('send command');
 
-            // Send response in callback if required
-            if (obj.callback) adapter.sendTo(obj.from, obj.command, 'Message received', obj.callback);
+                // Send response in callback if required
+                if (obj.callback) adapter.sendTo(obj.from, obj.command, 'Message received', obj.callback);
+                break;
+            case 'connectToZont':
+                connectToZont(obj);
+                break;
+            default:
+                adapter.log.warn('Unknown message: ' + JSON.stringify(obj));
+                break;
         }
     }
 });
+
+function connectToZont(obj){
+    var username;
+    var password;
+    if (obj && obj.message && typeof obj.message == 'object') {
+        username = obj.message.username;
+        password = obj.message.password;
+    } else {
+        username = adapter.config.username;
+        password = adapter.config.password;
+    }
+    if (username) {
+        adapter.log.info('try to connect to zont-online '+username+' '+password);
+    }
+}
+
 
 // is called when databases are connected and adapter received configuration.
 // start here!

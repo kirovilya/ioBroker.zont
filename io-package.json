@@ -22,9 +22,9 @@
         },
         "title": "Microline Zont adapter",
         "desc": {
-            "en": "ioBroker Microline Zont adapter",
+            "en": "ioBroker adapter for https://zont-online.ru service",
             "de": "ioBroker Microline Zont adapter",
-            "ru": "ioBroker Microline Zont adapter",
+            "ru": "ioBroker adapter for https://zont-online.ru service",
             "pt": "Modelo de adaptador para o ioBroker",
             "fr": "ioBroker adaptateur modèle",
             "nl": "ioBroker Microline Zont adapter"
@@ -34,14 +34,14 @@
         "icon": "zont.png",
         "enabled": true,
         "extIcon": "https://raw.githubusercontent.com/kirovilya/ioBroker.zont/master/admin/zont.png",
-        "keywords": ["zont", "vis", "GUI", "graphical", "scada"],
+        "keywords": ["zont"],
         "readme": "https://github.com/kirovilya/ioBroker.zont/blob/master/README.md",
         "loglevel": "info",
         "type": "general"
     },
     "native": {
-        "test1": false,
-        "test2": 42
+        "username": "",
+        "password": ""
     },
     "objects": [
 

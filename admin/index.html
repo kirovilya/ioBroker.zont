@@ -28,6 +28,26 @@
 <!-- you have to define 2 functions in the global scope: -->
 <script type="text/javascript">
 
+    function tryToConnect(user, pass) {
+        // if (!active) {
+        //     showMessage(_('Enable adapter first'), 'Warning', 'info');
+        //     return;
+        // }
+
+        if (window.confirm(_('Information will be merged. Are you sure?'))) {
+            $('#connect').button('disable');
+            sendTo(null, 'connectToZont', {username: user, password: pass}, function (msg) {
+
+                $('#connect').button('enable');
+
+                if (!msg || msg.error) {
+                    showMessage(msg.error, _('Error'), 'alert');
+                    return;
+                }
+            });
+        }
+    }
+
     // the function loadSettings has to exist ...
     function load(settings, onChange) {
         // example: select elements with id=key and class=value and insert value
@@ -48,6 +68,12 @@
         }
         // Signal to admin, that no changes yet
         onChange(false);
+
+        $('#connect').button({
+            icons: {primary: 'ui-icon-refresh'}
+        }).click(function() {
+            tryToConnect($('#username').val(), $('#password').val());
+        });
     }
 
     // ... and the function save has to exist.
@@ -71,16 +97,20 @@
 <div id="adapter-container">
 
     <table><tr>
-        <td><img src="zont.png"/></td>
-        <td><h3 class="translate">template adapter settings</h3></td>
-    </tr></table>
-    <p>
-        <span><label for="test1" class="translate">test1</label></span><input class="value" id="test1"/><br>
-        <span><label for="test2" class="translate">test2</label></span><input class="value" id="test2"/><br>
-    </p>
-
+            <td><img src="zont.png"/></td>
+            <td><h3 class="translate">Zont adapter settings</h3></td>
+        </tr>
+        <tr>
+            <td class="translate" style="text-align: right">Zont username:</td>
+            <td><input class="value" id="username"/></td>
+        </tr>
+        <tr>
+            <td class="translate" style="text-align: right">Password:</td>
+            <td><input class="value" type="password" id="password"/></td>
+        </tr>
+    </table>
+    <button id="connect" class="translateB">Try to connect</button>
     <p class="translate">on save adapter restarts with new config immediately</p>
-
 </div>
 
 </html>

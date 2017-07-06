@@ -1,5 +1,8 @@
 ![Logo](admin/zont.png)
 # ioBroker.zont
+
+ioBroker adapter for https://zont-online.ru service
+
 =================
 
 ## License
