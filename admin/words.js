@@ -1,10 +1,10 @@
 // Dictionary (systemDictionary is global variable from adapter-settings.js)
 systemDictionary = {
-	"template adapter settings": {"de": "Beispiel", "ru": "Пример"},
-	"test1":                    {"en": "Test 1", "de": "Test 1", "ru": "Тест 1"},
-	"test2":                    {"en": "Test 2", "de": "Test 2", "ru": "Тест 2"},
+	"template adapter settings": {"de": "Beispiel", "ru": "РќР°СЃС‚СЂРѕР№РєР° РїРѕРґРєР»СЋС‡РµРЅРёСЏ Microline Zont"},
+	"test1":                    {"en": "Test 1", "de": "Test 1", "ru": "РРјСЏ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ"},
+	"test2":                    {"en": "Test 2", "de": "Test 2", "ru": "РџР°СЂРѕР»СЊ"},
 	"on save adapter restarts with new config immediately": {
 		"de": "Beim Speichern von Einstellungen der Adapter wird sofort neu gestartet.",
-		"ru": "Сразу после сохранения настроек драйвер перезапуститься с новыми значениями"
+		"ru": "РџСЂРё СЃРѕС…СЂР°РЅРµРЅРёРё, РґСЂР°Р№РІРµСЂ РїРµСЂРµР·Р°РїСѓСЃС‚РёС‚СЃСЏ СЃ РЅРѕРІС‹РјРё РЅР°СЃС‚СЂРѕР№РєР°РјРё."
 	}
 };

@@ -40,7 +40,7 @@
         "type": "general"
     },
     "native": {
-        "test1": False,
+        "test1": false,
         "test2": 42
     },
     "objects": [
