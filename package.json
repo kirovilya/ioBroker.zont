@@ -1,0 +1,36 @@
+{
+  "name": "iobroker.zont",
+  "version": "0.5.0",
+  "description": "ioBroker Microline Zont Adapter",
+  "author": {
+    "name": "Kirov Ilya",
+    "email": "kirovilya@gmail.com"
+  },
+  "contributors": [
+    {
+      "name": "Kirov Ilya",
+      "email": "kirovilya@gmail.com"
+    }
+  ],
+  "homepage": "https://github.com/kirovilya/ioBroker.zont",
+  "license": "MIT",
+  "keywords": [
+    "ioBroker",
+    "zont",
+    "Smart Home",
+    "home automation"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kirovilya/ioBroker.zont"
+  },
+  "dependencies": {
+  },
+  "devDependencies": {},
+  "main": "main.js",
+  "scripts": {},
+  "bugs": {
+    "url": "https://github.com/kirovilya/ioBroker.zont/issues"
+  },
+  "readmeFilename": "README.md"
+}
