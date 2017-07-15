@@ -37,7 +37,8 @@
         "keywords": ["zont"],
         "readme": "https://github.com/kirovilya/ioBroker.zont/blob/master/README.md",
         "loglevel": "info",
-        "type": "general"
+        "type": "general",
+        "messagebox":               true
     },
     "native": {
         "username": "",

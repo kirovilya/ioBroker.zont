@@ -29,23 +29,14 @@
 <script type="text/javascript">
 
     function tryToConnect(user, pass) {
-        // if (!active) {
-        //     showMessage(_('Enable adapter first'), 'Warning', 'info');
-        //     return;
-        // }
-
-        if (window.confirm(_('Information will be merged. Are you sure?'))) {
-            $('#connect').button('disable');
-            sendTo(null, 'connectToZont', {username: user, password: pass}, function (msg) {
-
-                $('#connect').button('enable');
-
-                if (!msg || msg.error) {
-                    showMessage(msg.error, _('Error'), 'alert');
+        $('#connect').button('disable');
+        sendTo(null, 'connectToZont', {username: user, password: pass}, function (msg) {
+            $('#connect').button('enable');
+            if (!msg || msg.error) {
+                showMessage(msg.error, _('Error'), 'alert');
                     return;
-                }
-            });
-        }
+            }
+        });
     }
 
     // the function loadSettings has to exist ...
