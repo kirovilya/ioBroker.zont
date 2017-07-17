@@ -31,9 +31,9 @@
     function tryToConnect(user, pass) {
         $('#connect').button('disable');
         sendTo(null, 'connectToZont', {username: user, password: pass}, function (msg) {
-            $('#connect').button('enable');
+//            $('#connect').button('enable');
             if (!msg || msg.error) {
-                showMessage(msg.error, _('Error'), 'alert');
+//                showMessage(msg.error, _('Error'), 'alert');
                     return;
             }
         });

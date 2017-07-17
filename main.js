@@ -10,7 +10,7 @@
 
 // you have to require the utils module and call adapter function
 var utils = require(__dirname + '/lib/utils'); // Get common adapter utils
-var http  = require('http');
+var http  = require('https');
 
 // you have to call the adapter function and pass a options object
 // name has to be set and has to be equal to adapters folder name and main file name excluding extension
@@ -77,17 +77,24 @@ function connectToZont(obj){
         auth = username+':'+password;
         adapter.log.info('try to connect to zont-online '+username);
         options = {
-            host: 'https://zont-online.ru',
-            port: 443,
+            host: 'zont-online.ru',
             path: '/api/devices',
             method: 'POST',
             headers: {
-                'Authorization': 'Basic '+auth.toString('base64')
+                'Authorization': 'Basic '+new Buffer(auth).toString('base64'),
+                'X-ZONT-Client': username,
+                'Content-Type': 'application/json'
             }
         };
-        http.request(options, function (res) {
-            adapter.log.info(res);
+        var r = http.request(options, function (res) {
+            adapter.log.info('statusCode:', res.statusCode);
+            adapter.log.info('statusMessage:', res.statusMessage);
+            adapter.log.info('headers:', res.headers);
+            res.on('data', (d) => {
+                adapter.log.info(d);
+            });
         });
+        r.end();
     }
 }
 
