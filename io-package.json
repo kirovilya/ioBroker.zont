@@ -5,29 +5,17 @@
         "news": {
             "0.5.0": {
                 "en": "beta version",
-                "de": "Betaversion",
-                "ru": "Бета версия",
-                "pt": "Versão beta",
-                "fr": "Version bêta",
-                "nl": "Beta versie"
+                "ru": "Бета версия"
             },
             "0.0.1": {
                 "en": "initial adapter",
-                "de": "Initiale Version",
-                "ru": "Первоначальный адаптер",
-                "pt": "Versão inicial",
-                "fr": "Version initiale",
-                "nl": "Eerste release"
+                "ru": "Первоначальный адаптер"
             }
         },
         "title": "Microline Zont adapter",
         "desc": {
             "en": "ioBroker adapter for https://zont-online.ru service",
-            "de": "ioBroker Microline Zont adapter",
-            "ru": "ioBroker adapter for https://zont-online.ru service",
-            "pt": "Modelo de adaptador para o ioBroker",
-            "fr": "ioBroker adaptateur modèle",
-            "nl": "ioBroker Microline Zont adapter"
+            "ru": "ioBroker adapter for https://zont-online.ru service"
         },
         "platform": "Javascript/Node.js",
         "mode": "daemon",
@@ -37,14 +25,35 @@
         "keywords": ["zont"],
         "readme": "https://github.com/kirovilya/ioBroker.zont/blob/master/README.md",
         "loglevel": "info",
-        "type": "general",
-        "messagebox":               true
+        "type": "communication",
+        "messagebox": true
     },
     "native": {
         "username": "",
-        "password": ""
+        "password": "",
+        "pollInterval": 30
     },
-    "objects": [
-
+    "instanceObjects": [
+        {
+            "_id":  "info",
+            "type": "channel",
+            "common": {
+                "name": "Information"
+            },
+            "native": {}
+        },
+        {
+            "_id":  "info.connection",
+            "type": "state",
+            "common": {
+                "role":  "indicator.connected",
+                "name":  "If connected to Zont-online",
+                "type":  "boolean",
+                "read":  true,
+                "write": false,
+                "def":   false
+            },
+            "native": {}
+        }
     ]
 }

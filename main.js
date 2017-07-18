@@ -55,21 +55,24 @@ adapter.on('message', function (obj) {
                 if (obj.callback) adapter.sendTo(obj.from, obj.command, 'Message received', obj.callback);
                 break;
             case 'connectToZont':
-                connectToZont(obj);
+                if (obj && obj.message && typeof obj.message == 'object') {
+                    connectToZont(obj.message.username, obj.message.password, function (res) {
+                        adapter.sendTo(obj.from, obj.command, res, obj.callback);
+                    });
+                }
                 break;
             default:
                 adapter.log.warn('Unknown message: ' + JSON.stringify(obj));
                 break;
         }
     }
+    processMessages();
 });
 
-function connectToZont(obj){
-    var username, password, options, auth;
-    if (obj && obj.message && typeof obj.message == 'object') {
-        username = obj.message.username;
-        password = obj.message.password;
-    } else {
+
+function connectToZont(username, password, callback){
+    var options, auth;
+    if (!username) {
         username = adapter.config.username;
         password = adapter.config.password;
     }
@@ -93,6 +96,19 @@ function connectToZont(obj){
             res.on('data', (d) => {
                 adapter.log.info(d);
             });
+            if (callback) {
+                if (res.statusCode == 200) {
+                    callback('ok');
+                } else {
+                    callback({error: 'zont request '+res.statusCode+': '+res.statusMessage});
+                }
+            }
+        });
+        r.on('error', function (res) {
+            adapter.log.error('zont request status message: '+res.message);
+            if (callback) {
+                callback({error: res.message});
+            }
         });
         r.end();
     }
@@ -128,66 +144,38 @@ function processMessage(message) {
     }
 }
 
+
+function syncObjects(){
+    pollStatus();
+    setInterval(pollStatus, adapter.config.pollInterval * 1000);
+}
+
+function pollStatus(dev) {
+    connectToZont(null, null, function (res) {
+        if (res == 'ok') {
+            adapter.setState('info.connection', true, true);
+        } else {
+            adapter.setState('info.connection', false, true);
+            if (res && res.error) {
+                adapter.log.error(res.error);
+            }
+            return;
+        }
+    });
+}
+
 function main() {
+    adapter.setState('info.connection', false, true);
 
     // The adapters config (in the instance object everything under the attribute "native") is accessible via
     // adapter.config:
     adapter.log.info('config username: ' + adapter.config.username);
-    adapter.log.info('config password: ' + adapter.config.password);
+    //adapter.log.info('config password: ' + adapter.config.password);
 
-
-    /**
-     *
-     *      For every state in the system there has to be also an object of type state
-     *
-     *      Here a simple template for a boolean variable named "testVariable"
-     *
-     *      Because every adapter instance uses its own unique namespace variable names can't collide with other adapters variables
-     *
-     */
-
-    adapter.setObject('testVariable', {
-        type: 'state',
-        common: {
-            name: 'testVariable',
-            type: 'boolean',
-            role: 'indicator'
-        },
-        native: {}
-    });
+    syncObjects();
 
     // in this template all states changes inside the adapters namespace are subscribed
     adapter.subscribeStates('*');
-
-
-    /**
-     *   setState examples
-     *
-     *   you will notice that each setState will cause the stateChange event to fire (because of above subscribeStates cmd)
-     *
-     */
-
-    // the variable testVariable is set to true as command (ack=false)
-    adapter.setState('testVariable', true);
-
-    // same thing, but the value is flagged "ack"
-    // ack should be always set to true if the value is received from or acknowledged from the target system
-    adapter.setState('testVariable', {val: true, ack: true});
-
-    // same thing, but the state is deleted after 30s (getState will return null afterwards)
-    adapter.setState('testVariable', {val: true, ack: true, expire: 30});
-
-
-
-    // examples for the checkPassword/checkGroup functions
-    adapter.checkPassword('admin', 'iobroker', function (res) {
-        console.log('check user admin pw ioboker: ' + res);
-    });
-
-    adapter.checkGroup('admin', 'admin', function (res) {
-        console.log('check group user admin group admin: ' + res);
-    });
-
 
     processMessages(true);
 }
