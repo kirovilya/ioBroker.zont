@@ -8,6 +8,10 @@
 /*jslint node: true */
 "use strict";
 
+const PATH_CONNECT = '/api/devices',
+      PATH_DEVICES = '/api/devices',
+      DEV_ZONT_H = 'T102'; // ZONT H-2 Домашний Wi-Fi-термостат
+
 // you have to require the utils module and call adapter function
 var utils = require(__dirname + '/lib/utils'); // Get common adapter utils
 var http  = require('https');
@@ -70,6 +74,49 @@ adapter.on('message', function (obj) {
 });
 
 
+function requestToZont(path, data, success, failure, user, pass) {
+    var options, auth,
+        username = user || adapter.config.username || '',
+        password = pass || adapter.config.password || '';
+    auth = username+':'+password;
+    options = {
+        host: 'zont-online.ru',
+        path: path,
+        method: 'POST',
+        headers: {
+            'Authorization': 'Basic '+new Buffer(auth).toString('base64'),
+            'X-ZONT-Client': username,
+            'Content-Type': 'application/json'
+        }
+    };
+    var r = http.request(options, function (res) {
+        var message = '', data = '';
+        res.on('data', (chunk) => {
+            message += chunk;
+        });
+        res.on('end', function() {
+            try {
+                data = JSON.parse(message);
+            } catch (err) {
+                adapter.log.error('Cannot parse: ' + message);
+                if (failure) failure(res, message);
+                return;
+            }
+            if (res.statusCode == 200) {
+                if (success) success(res, data);
+            } else {
+                if (failure) failure(res, data);
+            }
+        });
+    });
+    r.on('error', function (res) {
+        adapter.log.error('zont request failure: '+res.message);
+        if (failure) failure(res);
+    });
+    r.end();
+}
+
+
 function connectToZont(username, password, callback){
     var options, auth;
     if (!username) {
@@ -77,25 +124,12 @@ function connectToZont(username, password, callback){
         password = adapter.config.password;
     }
     if (username) {
-        auth = username+':'+password;
         adapter.log.info('try to connect to zont-online '+username);
-        options = {
-            host: 'zont-online.ru',
-            path: '/api/devices',
-            method: 'POST',
-            headers: {
-                'Authorization': 'Basic '+new Buffer(auth).toString('base64'),
-                'X-ZONT-Client': username,
-                'Content-Type': 'application/json'
-            }
-        };
-        var r = http.request(options, function (res) {
-            adapter.log.info('statusCode:', res.statusCode);
-            adapter.log.info('statusMessage:', res.statusMessage);
-            adapter.log.info('headers:', res.headers);
-            res.on('data', (d) => {
-                adapter.log.info(d);
-            });
+        requestToZont(PATH_CONNECT, null, function (res, data) {
+            adapter.log.info('statusCode: ' + res.statusCode);
+            adapter.log.info('statusMessage: ' + res.statusMessage);
+            adapter.log.info('headers: ' + res.headers);
+            adapter.log.info(data);
             if (callback) {
                 if (res.statusCode == 200) {
                     callback('ok');
@@ -103,14 +137,15 @@ function connectToZont(username, password, callback){
                     callback({error: 'zont request '+res.statusCode+': '+res.statusMessage});
                 }
             }
-        });
-        r.on('error', function (res) {
-            adapter.log.error('zont request status message: '+res.message);
-            if (callback) {
-                callback({error: res.message});
+        }, function (res, data) {
+            if (data) {
+                adapter.log.error('zont request error: '+res.statusCode+': '+res.statusMessage);
+                if (callback) callback({error: 'zont request '+res.statusCode+': '+res.statusMessage});
+            } else {
+                adapter.log.error('zont request status message: '+res.message);
+                if (callback) callback({error: res.message});
             }
-        });
-        r.end();
+        }, username, password);
     }
 }
 
@@ -161,6 +196,42 @@ function pollStatus(dev) {
             }
             return;
         }
+        // список устройств
+        requestToZont(PATH_DEVICES, null, function (res, data) {
+            for (var i = 0; i < data['devices'].length; i++) {
+                var dev = data['devices'][i],
+                    dev_id = dev['id'],
+                    dev_type = dev['device_type']['code'],
+                    dev_type_name = dev['device_type']['name'],
+                    dev_name = dev['name'],
+                    obj_name = adapter.namespace + '.' + dev_type+'_' + dev_id;
+                // канал для каждого устройства
+                adapter.setObjectNotExists(obj_name, {
+                    type: 'channel',
+                    common: {name: dev_name},
+                    native: dev
+                }, {});
+                // термометры
+                if (dev_type == DEV_ZONT_H) {
+                    for (var j = 0; j < dev['thermometers'].length; j++) {
+                        var term = dev['thermometers'][j],
+                            term_id = term['uuid'],
+                            term_name = term['name'],
+                            enabled = term['is_assigned_to_slot'],
+                            state_name = obj_name + '.' + 'therm_' + term_id,
+                            state_val = term['last_value'];
+                        if (enabled) {
+                            adapter.setObjectNotExists(state_name, {
+                                type: 'state',
+                                common: {name: term_name},
+                                native: term
+                            }, {});
+                            adapter.setState(state_name, state_val, true);
+                        }
+                    }
+                }
+            }
+        });
     });
 }
 
