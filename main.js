@@ -8,9 +8,12 @@
 /*jslint node: true */
 "use strict";
 
-const PATH_CONNECT = '/api/devices',
-      PATH_DEVICES = '/api/devices',
-      DEV_ZONT_H = 'T102'; // ZONT H-2 Домашний Wi-Fi-термостат
+const PATH_DEVICES = '/api/devices',
+      DEV_ZONT_H1 = 'T100', // ZONT H-1/H-1V  Домашний GSM-термостат
+      DEV_ZONT_H2 = 'T102', // ZONT H-2  Домашний Wi-Fi-термостат
+      DEV_L1000 = 'L1000', // ZONT L-1000  Многофункциональный программируемый GSM/Wi-Fi-термостат
+      DEV_TERM = [DEV_ZONT_H1, DEV_ZONT_H2, DEV_L1000];
+
 
 // you have to require the utils module and call adapter function
 var utils = require(__dirname + '/lib/utils'); // Get common adapter utils
@@ -20,6 +23,11 @@ var http  = require('https');
 // name has to be set and has to be equal to adapters folder name and main file name excluding extension
 // adapter will be restarted automatically every time as the configuration changed, e.g system.adapter.zont.0
 var adapter = utils.adapter('zont');
+
+
+function hasElement(array, value){
+    return array.indexOf( value ) != -1;
+}
 
 // is called when adapter shuts down - callback has to be called under any circumstances!
 adapter.on('unload', function (callback) {
@@ -105,7 +113,11 @@ function requestToZont(path, data, success, failure, user, pass) {
             if (res.statusCode == 200) {
                 if (success) success(res, data);
             } else {
-                if (failure) failure(res, data);
+                if (failure) {
+                    failure(res, data);
+                } else {
+                    adapter.log.error(res.statusMessage);
+                }
             }
         });
     });
@@ -113,6 +125,9 @@ function requestToZont(path, data, success, failure, user, pass) {
         adapter.log.error('zont request failure: '+res.message);
         if (failure) failure(res);
     });
+    if (data) {
+        r.write(JSON.stringify(data));
+    }
     r.end();
 }
 
@@ -125,7 +140,7 @@ function connectToZont(username, password, callback){
     }
     if (username) {
         adapter.log.info('try to connect to zont-online '+username);
-        requestToZont(PATH_CONNECT, null, function (res, data) {
+        requestToZont(PATH_DEVICES, null, function (res, data) {
             adapter.log.info('statusCode: ' + res.statusCode);
             adapter.log.info('statusMessage: ' + res.statusMessage);
             adapter.log.info('headers: ' + res.headers);
@@ -197,7 +212,7 @@ function pollStatus(dev) {
             return;
         }
         // список устройств
-        requestToZont(PATH_DEVICES, null, function (res, data) {
+        requestToZont(PATH_DEVICES, {load_io: true}, function (res, data) {
             for (var i = 0; i < data['devices'].length; i++) {
                 var dev = data['devices'][i],
                     dev_id = dev['id'],
@@ -211,29 +226,49 @@ function pollStatus(dev) {
                     common: {name: dev_name},
                     native: dev
                 }, {});
-                // термометры
-                if (dev_type == DEV_ZONT_H) {
-                    for (var j = 0; j < dev['thermometers'].length; j++) {
-                        var term = dev['thermometers'][j],
-                            term_id = term['uuid'],
-                            term_name = term['name'],
-                            enabled = term['is_assigned_to_slot'],
-                            state_name = obj_name + '.' + 'therm_' + term_id,
-                            state_val = term['last_value'];
-                        if (enabled) {
-                            adapter.setObjectNotExists(state_name, {
-                                type: 'state',
-                                common: {name: term_name},
-                                native: term
-                            }, {});
-                            adapter.setState(state_name, state_val, true);
-                        }
-                    }
+                // управление отоплением
+                if (hasElement(DEV_TERM, dev_type)) {
+                    processTermDev(obj_name, dev);
                 }
             }
         });
     });
 }
+
+
+function processTermDev(dev_obj_name, data) {
+    // термостат
+    var obj_name = dev_obj_name + '.' + 'thermostat_mode';
+    adapter.setObjectNotExists(obj_name, {type: 'state', common: {name: 'Режим термостата', role: 'value'}});
+    adapter.setState(obj_name, data['thermostat_mode'], true);
+    obj_name = dev_obj_name + '.' + 'thermostat_temp';
+    adapter.setObjectNotExists(obj_name, {type: 'state', common: {name: 'Целевая температура режима', role: 'value'}});
+    adapter.setState(obj_name, data['thermostat_mode_temps'][data['thermostat_mode']], true);
+
+    // термометры
+    for (var j = 0; j < data['thermometers'].length; j++) {
+        var term = data['thermometers'][j],
+            term_id = term['uuid'],
+            term_name = term['name'],
+            enabled = term['is_assigned_to_slot'],
+            state_name = dev_obj_name + '.' + 'therm_' + term_id,
+            state_val = term['last_value'];
+        if (enabled) {
+            adapter.setObjectNotExists(state_name, {type: 'state', common: {name: term_name, role: 'value'}, native: term});
+            adapter.setState(state_name, state_val, true);
+        }
+    }
+
+    // текущие показания
+    // if (data['io']) {
+    //     var last_state = data['io']['last-boiler-state'];
+    //     if (last_state) {
+    //         adapter.createState(null, null, state_name, {name: term_name}, term);
+    //         adapter.setState(state_name, state_val, true);
+    //     }
+    // }
+}
+
 
 function main() {
     adapter.setState('info.connection', false, true);
