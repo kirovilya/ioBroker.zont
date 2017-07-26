@@ -12,7 +12,22 @@ const PATH_DEVICES = '/api/devices',
       DEV_ZONT_H1 = 'T100', // ZONT H-1/H-1V  Домашний GSM-термостат
       DEV_ZONT_H2 = 'T102', // ZONT H-2  Домашний Wi-Fi-термостат
       DEV_L1000 = 'L1000', // ZONT L-1000  Многофункциональный программируемый GSM/Wi-Fi-термостат
-      DEV_TERM = [DEV_ZONT_H1, DEV_ZONT_H2, DEV_L1000];
+      DEV_ZTC100 = 'ZTC-100',
+      DEV_ZTC110 = 'ZTC-110',
+      DEV_ZTC500 = 'ZTC-500',
+      DEV_ZTC700 = 'ZTC-700',
+      DEV_ZTC700M = 'ZTC-700M',
+      DEV_ZTC701M = 'ZTC-701M',
+      DEV_ZTC720 = 'ZTC-720',
+      DEV_ZTA110 = 'ZTA-110',
+      DEV_TRACK = 'tracker',
+      DEV_SX250 = 'SX250',
+      DEV_SX170 = 'SX170',
+      DEV_SX300 = 'SX300',
+      DEV_SX350 = 'SX350',
+      DEV_TERM = [DEV_ZONT_H1, DEV_ZONT_H2, DEV_L1000],
+      DEV_GUARD = [DEV_ZONT_H1, DEV_ZONT_H2, DEV_L1000, DEV_ZTC100, DEV_ZTC110, DEV_ZTC500, DEV_ZTC700, DEV_ZTC700M,
+          DEV_ZTC701M, DEV_ZTC720, DEV_ZTA110, DEV_SX250, DEV_SX170, DEV_SX300, DEV_SX350];
 
 
 // you have to require the utils module and call adapter function
@@ -200,6 +215,13 @@ function syncObjects(){
     setInterval(pollStatus, adapter.config.pollInterval * 1000);
 }
 
+
+function updateState(id, name, value) {
+    adapter.setObjectNotExists(id, {type: 'state', common: {name: name, role: 'value'}});
+    adapter.setState(id, value, true);
+}
+
+
 function pollStatus(dev) {
     connectToZont(null, null, function (res) {
         if (res == 'ok') {
@@ -226,9 +248,16 @@ function pollStatus(dev) {
                     common: {name: dev_name},
                     native: dev
                 }, {});
+                updateState(obj_name + '.is_active', 'Активность', dev['is_active']);
+                updateState(obj_name + '.online', 'На связи', dev['online']);
                 // управление отоплением
                 if (hasElement(DEV_TERM, dev_type)) {
                     processTermDev(obj_name, dev);
+                }
+                // постановка на охрану
+                if (hasElement(DEV_GUARD, dev_type)) {
+                    updateState(obj_name + '.guard', 'Охрана', dev['io']['guard-state']);
+                    updateState(obj_name + '.siren', 'Сирена', dev['io']['siren']);
                 }
             }
         });
@@ -238,12 +267,11 @@ function pollStatus(dev) {
 
 function processTermDev(dev_obj_name, data) {
     // термостат
-    var obj_name = dev_obj_name + '.' + 'thermostat_mode';
-    adapter.setObjectNotExists(obj_name, {type: 'state', common: {name: 'Режим термостата', role: 'value'}});
-    adapter.setState(obj_name, data['thermostat_mode'], true);
-    obj_name = dev_obj_name + '.' + 'thermostat_temp';
-    adapter.setObjectNotExists(obj_name, {type: 'state', common: {name: 'Целевая температура режима', role: 'value'}});
-    adapter.setState(obj_name, data['thermostat_mode_temps'][data['thermostat_mode']], true);
+    updateState(dev_obj_name + '.' + 'thermostat_mode', 'Режим термостата', data['thermostat_mode']);
+    if (data['thermostat_mode_temps']) {
+        updateState(dev_obj_name + '.' + 'thermostat_temp', 'Целевая температура режима',
+            data['thermostat_mode_temps'][data['thermostat_mode']]);
+    }
 
     // термометры
     for (var j = 0; j < data['thermometers'].length; j++) {
@@ -254,8 +282,7 @@ function processTermDev(dev_obj_name, data) {
             state_name = dev_obj_name + '.' + 'therm_' + term_id,
             state_val = term['last_value'];
         if (enabled) {
-            adapter.setObjectNotExists(state_name, {type: 'state', common: {name: term_name, role: 'value'}, native: term});
-            adapter.setState(state_name, state_val, true);
+            updateState(state_name, term_name, state_val);
         }
     }
 
