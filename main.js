@@ -9,25 +9,7 @@
 "use strict";
 
 const PATH_DEVICES = '/api/devices',
-      DEV_ZONT_H1 = 'T100', // ZONT H-1/H-1V  Домашний GSM-термостат
-      DEV_ZONT_H2 = 'T102', // ZONT H-2  Домашний Wi-Fi-термостат
-      DEV_L1000 = 'L1000', // ZONT L-1000  Многофункциональный программируемый GSM/Wi-Fi-термостат
-      DEV_ZTC100 = 'ZTC-100',
-      DEV_ZTC110 = 'ZTC-110',
-      DEV_ZTC500 = 'ZTC-500',
-      DEV_ZTC700 = 'ZTC-700',
-      DEV_ZTC700M = 'ZTC-700M',
-      DEV_ZTC701M = 'ZTC-701M',
-      DEV_ZTC720 = 'ZTC-720',
-      DEV_ZTA110 = 'ZTA-110',
-      DEV_TRACK = 'tracker',
-      DEV_SX250 = 'SX250',
-      DEV_SX170 = 'SX170',
-      DEV_SX300 = 'SX300',
-      DEV_SX350 = 'SX350',
-      DEV_TERM = [DEV_ZONT_H1, DEV_ZONT_H2, DEV_L1000],
-      DEV_GUARD = [DEV_ZONT_H1, DEV_ZONT_H2, DEV_L1000, DEV_ZTC100, DEV_ZTC110, DEV_ZTC500, DEV_ZTC700, DEV_ZTC700M,
-          DEV_ZTC701M, DEV_ZTC720, DEV_ZTA110, DEV_SX250, DEV_SX170, DEV_SX300, DEV_SX350];
+      PATH_LOADDATA = '/api/load_data';
 
 
 // you have to require the utils module and call adapter function
@@ -100,7 +82,8 @@ adapter.on('message', function (obj) {
 function requestToZont(path, data, success, failure, user, pass) {
     var options, auth,
         username = user || adapter.config.username || '',
-        password = pass || adapter.config.password || '';
+        password = pass || adapter.config.password || '',
+        postData = JSON.stringify(data);
     auth = username+':'+password;
     options = {
         host: 'zont-online.ru',
@@ -141,7 +124,8 @@ function requestToZont(path, data, success, failure, user, pass) {
         if (failure) failure(res);
     });
     if (data) {
-        r.write(JSON.stringify(data));
+        r.write(postData);
+        //adapter.log.info(postData);
     }
     r.end();
 }
@@ -156,10 +140,10 @@ function connectToZont(username, password, callback){
     if (username) {
         adapter.log.info('try to connect to zont-online '+username);
         requestToZont(PATH_DEVICES, null, function (res, data) {
-            adapter.log.info('statusCode: ' + res.statusCode);
-            adapter.log.info('statusMessage: ' + res.statusMessage);
-            adapter.log.info('headers: ' + res.headers);
-            adapter.log.info(data);
+            //adapter.log.info('statusCode: ' + res.statusCode);
+            //adapter.log.info('statusMessage: ' + res.statusMessage);
+            //adapter.log.info('headers: ' + JSON.stringify(res.headers));
+            //adapter.log.info(JSON.stringify(data));
             if (callback) {
                 if (res.statusCode == 200) {
                     callback('ok');
@@ -235,13 +219,15 @@ function pollStatus(dev) {
         }
         // список устройств
         requestToZont(PATH_DEVICES, {load_io: true}, function (res, data) {
+            //adapter.log.info(JSON.stringify(data));
             for (var i = 0; i < data['devices'].length; i++) {
                 var dev = data['devices'][i],
                     dev_id = dev['id'],
                     dev_type = dev['device_type']['code'],
                     dev_type_name = dev['device_type']['name'],
                     dev_name = dev['name'],
-                    obj_name = adapter.namespace + '.' + dev_type+'_' + dev_id;
+                    obj_name = adapter.namespace + '.' + dev_type+'_' + dev_id,
+                    capa = dev['capabilities'];
                 // канал для каждого устройства
                 adapter.setObjectNotExists(obj_name, {
                     type: 'channel',
@@ -251,14 +237,16 @@ function pollStatus(dev) {
                 updateState(obj_name + '.is_active', 'Активность', dev['is_active']);
                 updateState(obj_name + '.online', 'На связи', dev['online']);
                 // управление отоплением
-                if (hasElement(DEV_TERM, dev_type)) {
-                    processTermDev(obj_name, dev);
-                }
-                // постановка на охрану
-                if (hasElement(DEV_GUARD, dev_type)) {
+                processTermDev(obj_name, dev);
+
+                if (hasElement(capa, "has_guard_state")) {
                     updateState(obj_name + '.guard', 'Охрана', dev['io']['guard-state']);
+                }
+                if (hasElement(capa, "has_siren_control")) {
                     updateState(obj_name + '.siren', 'Сирена', dev['io']['siren']);
                 }
+                // авто
+                processAutoDev(obj_name, dev);
             }
         });
     });
@@ -266,34 +254,221 @@ function pollStatus(dev) {
 
 
 function processTermDev(dev_obj_name, data) {
+    let capa = data['capabilities'];
     // термостат
-    updateState(dev_obj_name + '.' + 'thermostat_mode', 'Режим термостата', data['thermostat_mode']);
-    if (data['thermostat_mode_temps']) {
-        updateState(dev_obj_name + '.' + 'thermostat_temp', 'Целевая температура режима',
-            data['thermostat_mode_temps'][data['thermostat_mode']]);
+    if (hasElement(capa, "has_thermostat")) {
+        updateState(dev_obj_name + '.' + 'thermostat_mode', 'Режим термостата', data['thermostat_mode']);
+        if (data['thermostat_mode_temps']) {
+            updateState(dev_obj_name + '.' + 'thermostat_temp', 'Целевая температура режима',
+                data['thermostat_mode_temps'][data['thermostat_mode']]);
+        }
     }
-
     // термометры
-    for (var j = 0; j < data['thermometers'].length; j++) {
-        var term = data['thermometers'][j],
-            term_id = term['uuid'],
-            term_name = term['name'],
-            enabled = term['is_assigned_to_slot'],
-            state_name = dev_obj_name + '.' + 'therm_' + term_id,
-            state_val = term['last_value'];
-        if (enabled) {
-            updateState(state_name, term_name, state_val);
+    if (hasElement(capa, "has_thermometer_functions")) {
+        for (let j = 0; j < data['thermometers'].length; j++) {
+            let term = data['thermometers'][j],
+                term_id = term['uuid'],
+                term_name = term['name'],
+                enabled = term['is_assigned_to_slot'],
+                state_name = dev_obj_name + '.' + 'therm_' + term_id,
+                state_val = term['last_value'];
+            if (enabled) {
+                updateState(state_name, term_name, state_val);
+            }
         }
     }
 
-    // текущие показания
-    // if (data['io']) {
-    //     var last_state = data['io']['last-boiler-state'];
-    //     if (last_state) {
-    //         adapter.createState(null, null, state_name, {name: term_name}, term);
-    //         adapter.setState(state_name, state_val, true);
+    // OT
+    if (data['ot_enabled'] != undefined) {
+        updateState(dev_obj_name + '.' + 'ot_enabled', 'OpenTherm активен', data['ot_enabled']);
+    }
+
+    if (hasElement(capa, "has_thermostat")) {
+        let term = data['io']['last-boiler-state'],
+            ot = data['io']['ot_state'],
+            state_name = dev_obj_name + '.';
+
+        if (term['boiler_work_time'] != undefined) {
+            updateState(state_name+'boiler_work_time', 'Время работы котла, сек', term['boiler_work_time']);
+        }
+        if (term['target_temp'] != undefined) {
+            updateState(state_name+'target_temp', 'Целевая температура', term['target_temp']);
+        }
+        if (term['pza_t'] != undefined) {
+            updateState(state_name+'pza_t', 'Расчётная температура ПЗА', term['pza_t']);
+        }
+        if (term['dhw_t'] != undefined) {
+            updateState(state_name+'dhw_t', 'Заданная температура ГВС', term['dhw_t']);
+        }
+        if (term['power'] != undefined) {
+            updateState(state_name+'power', 'Наличие питания', term['power']);
+        }
+        if (term['fail'] != undefined) {
+            updateState(state_name+'fail', 'Авария котла', term['fail']);
+        }
+        if (ot && ot['cs'] != undefined) {
+            updateState(state_name+'ot_cs', 'OT Заданная t° воды', ot['cs']);
+        }
+        if (ot && ot['bt'] != undefined) {
+            updateState(state_name+'ot_bt', 'OT Фактическая t° воды', ot['bt']);
+        }
+        if (ot && ot['dt'] != undefined) {
+            updateState(state_name+'ot_dt', 'OT Фактическая t° ГВС', ot['dt']);
+        }
+        if (ot && ot['rml'] != undefined) {
+            updateState(state_name+'ot_rml', 'OT Уровень модуляции горелки', ot['rml']);
+        }
+        if (ot && ot['rwt'] != undefined) {
+            updateState(state_name+'ot_rwt', 'OT Температура обратного потока', ot['rwt']);
+        }
+        if (ot && ot['ot'] != undefined) {
+            updateState(state_name+'ot_ot', 'OT Уличная температура', ot['ot']);
+        }
+        if (ot && ot['wp'] != undefined) {
+            updateState(state_name+'ot_wp', 'OT Давление носителя', ot['wp']);
+        }
+        if (ot && ot['fr'] != undefined) {
+            updateState(state_name+'ot_fr', 'OT Скорость потока ГВС', ot['fr']);
+        }
+        if (ot && ot['s'] && ot['s'].length > 0) {
+            updateState(state_name+'ot_s', 'OT Горелка активна', hasElement(ot['s'], 'fl'));
+        }
+        if (ot && ot['ff'] != undefined) {
+            updateState(state_name+'ot_ff', 'OT Код ошибки', ot['ff'].c);
+        }
+    }
+    
+    // // получим данные за последнюю минуту
+    // let maxmoment = Math.floor(Date.now() / 1000);
+    // let minmoment = maxmoment - 60;
+
+    // requestToZont(PATH_LOADDATA, {requests: [{device_id: data['id'], data_types: ['thermostat_work', 'custom_controls', 'temperature'], mintime: minmoment, maxtime: maxmoment}]}, 
+    //     function (res, data) {
+    //         adapter.log.info(JSON.stringify(data));
+    //         for (let i = 0; i < data['responses'].length; i++) {
+    //             let term = data['responses'][i]['thermostat_work'],
+    //                 ot = term['ot'],
+    //                 state_name = dev_obj_name + '.';
+    //             if (term['boiler_work_time'] && term['boiler_work_time'].length > 0) {
+    //                 updateState(state_name+'boiler_work_time', 'Время работы котла, сек', term['boiler_work_time'][0][1]);
+    //             }
+    //             if (term['target_temp']) {
+    //                 updateState(state_name+'target_temp', 'Целевая температура', term['target_temp'][0][1]);
+    //             }
+    //             if (term['pza_t'] != undefined) {
+    //                 updateState(state_name+'pza_t', 'Расчётная температура ПЗА', term['pza_t']);
+    //             }
+    //             if (term['dhw_t'] != undefined) {
+    //                 updateState(state_name+'dhw_t', 'Заданная температура ГВС', term['dhw_t']);
+    //             }
+    //             if (term['power']) {
+    //                 updateState(state_name+'power', 'Наличие питания', term['power'][0][1]);
+    //             }
+    //             if (term['fail']) {
+    //                 updateState(state_name+'fail', 'Авария котла', term['fail'][0][1]);
+    //             }
+    //             if (ot && ot['cs']) {
+    //                 updateState(state_name+'ot_cs', 'OT Заданная t° воды', ot['cs'][0][1]);
+    //             }
+    //             if (ot && ot['bt']) {
+    //                 updateState(state_name+'ot_bt', 'OT Фактическая t° воды', ot['bt'][0][1]);
+    //             }
+    //             if (ot && ot['dt']) {
+    //                 updateState(state_name+'ot_dt', 'OT Фактическая t° ГВС', ot['dt'][0][1]);
+    //             }
+    //             if (ot && ot['rml']) {
+    //                 updateState(state_name+'ot_rml', 'OT Уровень модуляции горелки', ot['rml'][0][1]);
+    //             }
+    //             if (ot && ot['rwt']) {
+    //                 updateState(state_name+'ot_rwt', 'OT Температура обратного потока', ot['rwt'][0][1]);
+    //             }
+    //             if (ot && ot['ot']) {
+    //                 updateState(state_name+'ot_ot', 'OT Уличная температура', ot['ot'][0][1]);
+    //             }
+    //             if (ot && ot['wp']) {
+    //                 updateState(state_name+'ot_wp', 'OT Давление носителя', ot['wp'][0][1]);
+    //             }
+    //             if (ot && ot['fr']) {
+    //                 updateState(state_name+'ot_fr', 'OT Скорость потока ГВС', ot['fr'][0][1]);
+    //             }
+    //             if (ot && ot['s'] && ot['s'].length > 0) {
+    //                 updateState(state_name+'ot_s', 'OT Горелка активна', hasElement(ot['s'][0][1], 'fl'));
+    //             }
+    //             if (ot && ot['ff']) {
+    //                 updateState(state_name+'ot_ff', 'OT Код ошибки', ot['ff'][0][1].c);
+    //             }
+    //             // custom_controls
+    //         }
     //     }
-    // }
+    // );
+}
+
+function processAutoDev(dev_obj_name, data) {
+    let state_name = dev_obj_name + '.',
+        io = data['io'],
+        capa = data['capabilities'];
+    // автомобильные сенсоры
+    if (hasElement(capa, "has_car_sensors")) { 
+        if (io['door-1'] != undefined) {
+            updateState(state_name+'door_1', 'Дверь 1 открыта', io['door-1']);
+        }
+        if (io['door-2'] != undefined) {
+            updateState(state_name+'door_2', 'Дверь 2 открыта', io['door-2']);
+        }
+        if (io['door-3'] != undefined) {
+            updateState(state_name+'door_3', 'Дверь 3 открыта', io['door-3']);
+        }
+        if (io['door-4'] != undefined) {
+            updateState(state_name+'door_4', 'Дверь 4 открыта', io['door-4']);
+        }
+        if (io['doors'] != undefined) {
+            updateState(state_name+'doors', 'Двери открыты', io['doors']);
+        }
+        if (io['trunk'] != undefined) {
+            updateState(state_name+'trunk', 'Багажник открыт', io['trunk']);
+        }
+        if (io['hood'] != undefined) {
+            updateState(state_name+'hood', 'Капот открыт', io['hood']);
+        }
+        if (io['hood-trunk'] != undefined) {
+            updateState(state_name+'hood_trunk', 'Капот или багажник открыт', io['hood-trunk']);
+        }
+    }
+    if (hasElement(capa, "has_engine_block") && io['engine-block'] != undefined) {
+        updateState(state_name+'engine_block', 'Блокировка двигателя', io['engine-block']);
+    }
+    if (hasElement(capa, "has_webasto") && io['webasto'] != undefined) {
+        updateState(state_name+'webasto', 'Предпусковой подогреватель (webasto)', io['webasto']);
+    }
+    if (hasElement(capa, "has_autostart")) {
+        if (io['auto-ignition'] != undefined) {
+            updateState(state_name+'auto_ignition', 'Автозапуск', io['auto-ignition']['state']);
+        }
+        if (io['ignition-state'] != undefined) {
+            updateState(state_name+'ignition_state', 'Двигатель запущен', io['ignition-state']);
+        }
+    }
+    if (hasElement(capa, "has_voltage_sensor") && io['voltage'] != undefined) {
+        updateState(state_name+'voltage', 'Напряжение питания', io['voltage']);
+    }
+    // температурные сенсоры
+    if (hasElement(capa, "has_temperature_sensors") && io['temperature'] && io['temperature'].length > 0) {
+        for (let i = 0; i < data['temperature_conf']['assignments'].length; i++){
+            let ttype = data['temperature_conf']['assignments'][i],
+                val = io['temperature'][i].value;
+            switch(ttype) {
+                case 'engine':
+                    updateState(state_name+'temp_engine', 'Температура двигателя', val);
+                    break;
+                case 'cabin':
+                    updateState(state_name+'temp_cabin', 'Температура салона', val);
+                    break;
+                case 'outside':
+                    updateState(state_name+'temp_outside', 'Температура снаружи', val);
+                    break;
+            }
+        }
+    }
 }
 
 
@@ -308,7 +483,7 @@ function main() {
     syncObjects();
 
     // in this template all states changes inside the adapters namespace are subscribed
-    adapter.subscribeStates('*');
+    //adapter.subscribeStates('*');
 
     processMessages(true);
 }
