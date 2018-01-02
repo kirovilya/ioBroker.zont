@@ -45,11 +45,19 @@ adapter.on('objectChange', function (id, obj) {
 // is called if a subscribed state changes
 adapter.on('stateChange', function (id, state) {
     // Warning, state can be null if it was deleted
-    adapter.log.info('stateChange ' + id + ' ' + JSON.stringify(state));
+    //adapter.log.info('stateChange ' + id + ' ' + JSON.stringify(state));
 
     // you can use the ack flag to detect if it is status (true) or command (false)
     if (state && !state.ack) {
-        adapter.log.info('ack is not set!');
+        // установка значения пользователем
+        //adapter.log.info('ack is not set!');
+        adapter.log.info('User stateChange ' + id + ' ' + JSON.stringify(state));
+        // siren
+        // guard-state
+        // engine-block
+        // webasto 
+        // auto-ignition
+        // term_
     }
 });
 
@@ -331,6 +339,13 @@ function processTermDev(dev_obj_name, data) {
             updateState(state_name+'ot_fr', 'OT Скорость потока ГВС', ot['fr']);
         }
         if (ot && ot['s'] && ot['s'].length > 0) {
+            /*"f" – авария
+            "ch" – отопление включено
+            "dhw" – ГВС включено
+            "fl" – горелка работает
+            "cl" – охлаждение работает
+            "ch2" – второй контур отопления включен
+            "di" – диагностическая индикация*/
             updateState(state_name+'ot_s', 'OT Горелка активна', hasElement(ot['s'], 'fl'));
         }
         if (ot && ot['ff'] != undefined) {
@@ -483,7 +498,7 @@ function main() {
     syncObjects();
 
     // in this template all states changes inside the adapters namespace are subscribed
-    //adapter.subscribeStates('*');
+    adapter.subscribeStates('*');
 
     processMessages(true);
 }
