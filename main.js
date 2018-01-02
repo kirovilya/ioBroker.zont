@@ -138,7 +138,7 @@ function connectToZont(username, password, callback){
         password = adapter.config.password;
     }
     if (username) {
-        adapter.log.info('try to connect to zont-online '+username);
+        //adapter.log.info('try to connect to zont-online '+username);
         requestToZont(PATH_DEVICES, null, function (res, data) {
             //adapter.log.info('statusCode: ' + res.statusCode);
             //adapter.log.info('statusMessage: ' + res.statusMessage);
