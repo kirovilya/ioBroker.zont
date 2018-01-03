@@ -64,9 +64,9 @@ adapter.on('stateChange', function (id, state) {
         let dev_id = id.split('.')[2].split('_')[1];
         let state_name = id.split('.')[3];
         let new_config;
-        switch (state_name) {
+        switch (true) {
             // режим термостата
-            case 'thermostat_mode':
+            case state_name == 'thermostat_mode':
                 new_config = {device_id: dev_id, thermostat_mode: state.val};
                 //adapter.log.info('update request: '+JSON.stringify(new_config));
                 requestToZont(PATH_UPDATE, new_config, 
@@ -74,24 +74,46 @@ adapter.on('stateChange', function (id, state) {
                         //adapter.log.info('update response: '+JSON.stringify(data));
                     }
                 );
+                pollStatus();
                 break;
-            // температура режима
-            case 'thermostat_temp':
-                // получим текущий режим сперва
-                let mode_id = id.replace('thermostat_temp', 'thermostat_mode');
-                adapter.getState(mode_id, function(err, mode_state){
-                    new_config = {device_id: dev_id, thermostat_mode_temps: {}};
-                    new_config.thermostat_mode_temps[mode_state.val] = state.val;
+            case state_name == 'thermostat_ext_mode':
+                new_config = {device_id: dev_id, thermostat_ext_mode: state.val};
+                //adapter.log.info('update request: '+JSON.stringify(new_config));
+                requestToZont(PATH_UPDATE, new_config, 
+                    function (res, data) {
+                        //adapter.log.info('update response: '+JSON.stringify(data));
+                    }
+                );
+                pollStatus();
+                break;
+            // температура режимов
+            case state_name.startsWith('thermostat_temp'):
+                let parts = state_name.split('__');
+                // значит есть зоны
+                if (parts.length > 2) {
+                    new_config = {device_id: dev_id, thermostat_ext_modes_config: {}};
+                    new_config.thermostat_ext_modes_config[parts[1]] = {zone_temp: {}};
+                    new_config.thermostat_ext_modes_config[parts[1]].zone_temp[parts[2]] = state.val;
                     //adapter.log.info('update request: '+JSON.stringify(new_config));
                     requestToZont(PATH_UPDATE, new_config, 
                         function (res, data) {
                             //adapter.log.info('update response: '+JSON.stringify(data));
                         }
                     );
-                });
+                } else {
+                    new_config = {device_id: dev_id, thermostat_mode_temps: {}};
+                    new_config.thermostat_mode_temps[parts[1]] = state.val;
+                    //adapter.log.info('update request: '+JSON.stringify(new_config));
+                    requestToZont(PATH_UPDATE, new_config, 
+                        function (res, data) {
+                            //adapter.log.info('update response: '+JSON.stringify(data));
+                        }
+                    );
+                }
+                pollStatus();
                 break;
             // охрана
-            case 'guard':
+            case state_name == 'guard':
                 new_config = {device_id: dev_id, portname: 'guard-state', type: 'string', value: (state.val) ? 'enabled' : 'disabled'};
                 //adapter.log.info('ioport request: '+JSON.stringify(new_config));
                 requestToZont(PATH_IOPORT, new_config, 
@@ -99,9 +121,10 @@ adapter.on('stateChange', function (id, state) {
                         //adapter.log.info('ioport response: '+JSON.stringify(data));
                     }
                 );
+                pollStatus();
                 break;
             // сирена
-            case 'siren':
+            case state_name == 'siren':
                 new_config = {device_id: dev_id, portname: 'siren', type: 'bool', value: state.val};
                 //adapter.log.info('ioport request: '+JSON.stringify(new_config));
                 requestToZont(PATH_IOPORT, new_config, 
@@ -109,9 +132,10 @@ adapter.on('stateChange', function (id, state) {
                         //adapter.log.info('ioport response: '+JSON.stringify(data));
                     }
                 );
+                pollStatus();
                 break;
             // блокировка двигателя
-            case 'engine_block':
+            case state_name == 'engine_block':
                 new_config = {device_id: dev_id, portname: 'engine-block', type: 'bool', value: state.val};
                 //adapter.log.info('ioport request: '+JSON.stringify(new_config));
                 requestToZont(PATH_IOPORT, new_config, 
@@ -119,9 +143,10 @@ adapter.on('stateChange', function (id, state) {
                         //adapter.log.info('ioport response: '+JSON.stringify(data));
                     }
                 );
+                pollStatus();
                 break;
             // webasto 
-            case 'webasto':
+            case state_name == 'webasto':
                 new_config = {device_id: dev_id, portname: 'webasto', type: 'bool', value: state.val};
                 //adapter.log.info('ioport request: '+JSON.stringify(new_config));
                 requestToZont(PATH_IOPORT, new_config, 
@@ -129,9 +154,10 @@ adapter.on('stateChange', function (id, state) {
                         //adapter.log.info('ioport response: '+JSON.stringify(data));
                     }
                 );
+                pollStatus();
                 break;
             // Автозапуск 
-            case 'auto_ignition':
+            case state_name == 'auto_ignition':
                 new_config = {device_id: dev_id, portname: 'auto-ignition', type: 'bool', value: (state.val) ? 'engine' : 'disabled'};
                 //adapter.log.info('ioport request: '+JSON.stringify(new_config));
                 requestToZont(PATH_IOPORT, new_config, 
@@ -139,6 +165,7 @@ adapter.on('stateChange', function (id, state) {
                         //adapter.log.info('ioport response: '+JSON.stringify(data));
                     }
                 );
+                pollStatus();
                 break;
         }
     }
@@ -353,21 +380,38 @@ function pollStatus(dev) {
                 if (hasElement(capa, "has_siren_control")) {
                     updateState(obj_name + '.siren', 'Сирена', dev['io']['siren'], {type: 'boolean', write: true});
                 }
+                if (hasElement(capa, "has_gsm")) {
+                    if (hasElement(capa, "has_gsm_balance")) {
+                        updateState(obj_name + '.gsm_balance', 'GSM Баланс', dev['balance'].value, {type: 'number', unit: 'руб'});
+                    }
+                    let gsm_state = dev['io']['gsm-state'];
+                    if (gsm_state != undefined) {
+                        updateState(obj_name + '.gsm_level', 'GSM Уровень сигнала', gsm_state.level, {type: 'number'});
+                        updateState(obj_name + '.gsm_operator', 'GSM Оператор', gsm_state.operator, {type: 'string'});
+                    }
+                }
+                
                 // авто
                 processAutoDev(obj_name, dev);
+
+                // произвольные действия
+                processCustomControls(obj_name, dev);
             }
         });
     });
 }
 
+function processCustomControls(dev_obj_name, data) {
+    let capa = data['capabilities'];
+    if (hasElement(capa, "has_custom_controls_schedule")) {
+        for (let i = 0; i < data['custom_controls'].length; i++) {
+            let control = data['custom_controls'][i];
+        }
+    }
+}
 
 function processTermDev(dev_obj_name, data) {
     let capa = data['capabilities'];
-    // термостат
-    if (hasElement(capa, "has_thermostat")) {
-        let modess = 'comfort:Комфорт;econom:Эконом;idle:Антизаморозка;schedule:Расписание';
-        updateState(dev_obj_name + '.' + 'thermostat_mode', 'Режим термостата', data['thermostat_mode'], {type: 'string', states: modess, write: true});
-    }
     // термометры
     if (hasElement(capa, "has_thermometer_functions")) {
         for (let j = 0; j < data['thermometers'].length; j++) {
@@ -383,24 +427,51 @@ function processTermDev(dev_obj_name, data) {
         }
     }
 
-    // OT
-    if (data['ot_enabled'] != undefined) {
-        updateState(dev_obj_name + '.' + 'ot_enabled', 'OpenTherm активен', data['ot_enabled'], {type: 'boolean'});
-    }
-
+    // термостат
     if (hasElement(capa, "has_thermostat")) {
         let term = data['io']['last-boiler-state'],
             ot = data['io']['ot_state'],
             state_name = dev_obj_name + '.';
+        // расширенный режим
+        if (hasElement(capa, "has_extmodes")) {
+            let modes = [], obj = data['thermostat_ext_modes_config'];
+            for (let p in obj) {
+                if(obj.hasOwnProperty(p)) {
+                    let mode = obj[p];
+                    if (mode.active) {
+                        modes.push(p + ':' + mode.name);
+                        for (let z in mode.zone_temp) {
+                            if(mode.zone_temp.hasOwnProperty(z) && mode.zone_temp[z]) {
+                                updateState(state_name + 'thermostat_temp__'+p+'__'+z, 'Температура режима ('+mode.name+') зоны ('+z+') термостата', mode.zone_temp[z], {type: 'number', unit: '°', write: true});
+                            }
+                        }
+                    }
+                }
+            }
+            let modess = modes.join(';');
+            updateState(state_name + 'thermostat_ext_mode', 'Режим термостата', data['thermostat_ext_mode'], {type: 'number', states: modess, write: true});
+        } else {
+            let modess = 'comfort:Комфорт;econom:Эконом;idle:Антизаморозка;schedule:Расписание';
+            updateState(state_name + 'thermostat_mode', 'Режим термостата', data['thermostat_mode'], {type: 'string', states: modess, write: true});
+            let obj = data['thermostat_mode_temps'];
+            for (let p in obj) {
+                if(obj.hasOwnProperty(p) && obj[p]) {
+                    updateState(state_name + 'thermostat_temp__'+p, 'Температура режима ('+p+') термостата', obj[p], {type: 'number', unit: '°', write: true});
+                }
+            }
+        }
+        if (term['target_temp'] != undefined) {
+            updateState(state_name+'target_temp', 'Целевая температура', term['target_temp'], {type: 'number', unit: '°', write: false});
+        }
 
         if (term['boiler_work_time'] != undefined) {
             updateState(state_name+'boiler_work_time', 'Время работы котла', term['boiler_work_time'], {type: 'number', unit: 'сек'});
         }
-        if (term['target_temp'] != undefined) {
-            updateState(state_name+'target_temp', 'Целевая температура', term['target_temp'], {type: 'number', unit: '°'});
-        }
         if (term['pza_t'] != undefined) {
-            updateState(state_name+'pza_t', 'Расчётная температура ПЗА', term['pza_t'], {type: 'number', unit: '°'});
+            updateState(state_name+'pza_t', 'ПЗА Расчётная температура', term['pza_t'], {type: 'number', unit: '°'});
+        }
+        if (data['pza'] != undefined) {
+            updateState(state_name+'pza', 'ПЗА активен', data['pza'].enabled, {type: 'boolean'});
         }
         if (term['dhw_t'] != undefined) {
             updateState(state_name+'dhw_t', 'Заданная температура ГВС', term['dhw_t'], {type: 'number', unit: '°'});
@@ -410,6 +481,10 @@ function processTermDev(dev_obj_name, data) {
         }
         if (term['fail'] != undefined) {
             updateState(state_name+'fail', 'Авария котла', term['fail']);
+        }
+        // OT
+        if (data['ot_enabled'] != undefined) {
+            updateState(state_name + 'ot_enabled', 'OpenTherm активен', data['ot_enabled'], {type: 'boolean'});
         }
         if (ot && ot['cs'] != undefined) {
             updateState(state_name+'ot_cs', 'OT Заданная температура воды', ot['cs'], {type: 'number', unit: '°'});
@@ -580,6 +655,12 @@ function processAutoDev(dev_obj_name, data) {
                     break;
             }
         }
+    }
+    if (hasElement(capa, "has_gps") && data['last_gps'] && data['last_gps'].length > 0) {
+        let last_gps = data['last_gps'][0];
+        updateState(state_name+'gps_x', 'GPS X', last_gps.x, {type: 'number'});
+        updateState(state_name+'gps_y', 'GPS Y', last_gps.y, {type: 'number'});
+        updateState(state_name+'gps_speed', 'GPS Скорость', last_gps.speed, {type: 'number'});
     }
 }
 
