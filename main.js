@@ -658,7 +658,6 @@ function processAutoDev(dev_obj_name, data) {
         }
     }
     if (hasElement(capa, "has_gps") && data['last_gps'] && data['last_gps'].length > 0) {
-        adapter.log.info(JSON.stringify(data['last_gps']));
         let last_gps = data['last_gps'][0];
         updateState(state_name+'gps_x', 'GPS X', last_gps.x, {type: 'number'});
         updateState(state_name+'gps_y', 'GPS Y', last_gps.y, {type: 'number'});
