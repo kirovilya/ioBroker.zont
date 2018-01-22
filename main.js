@@ -365,7 +365,7 @@ function pollStatus(dev) {
                     capa = dev['capabilities'];
                 // канал для каждого устройства
                 adapter.setObjectNotExists(obj_name, {
-                    type: 'channel',
+                    type: 'device',
                     common: {name: dev_name},
                     native: dev
                 }, {});
@@ -460,6 +460,7 @@ function processTermDev(dev_obj_name, data) {
                 }
             }
         }
+        if (!term) return;
         if (term['target_temp'] != undefined) {
             updateState(state_name+'target_temp', 'Целевая температура', term['target_temp'], {type: 'number', unit: '°', write: false});
         }
@@ -657,10 +658,12 @@ function processAutoDev(dev_obj_name, data) {
         }
     }
     if (hasElement(capa, "has_gps") && data['last_gps'] && data['last_gps'].length > 0) {
+        adapter.log.info(JSON.stringify(data['last_gps']));
         let last_gps = data['last_gps'][0];
         updateState(state_name+'gps_x', 'GPS X', last_gps.x, {type: 'number'});
         updateState(state_name+'gps_y', 'GPS Y', last_gps.y, {type: 'number'});
         updateState(state_name+'gps_speed', 'GPS Скорость', last_gps.speed, {type: 'number'});
+        updateState(state_name+'gps_time', 'GPS Время последих показаний', last_gps.time);
     }
 }
 
