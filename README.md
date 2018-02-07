@@ -1,9 +1,47 @@
 ![Logo](admin/zont.png)
+
 # ioBroker.zont
+
+[![NPM version](http://img.shields.io/npm/v/iobroker.zont.svg)](https://www.npmjs.com/package/iobroker.zont)
+[![Downloads](https://img.shields.io/npm/dm/iobroker.zont.svg)](https://www.npmjs.com/package/iobroker.zont)
+[![Tests](https://travis-ci.org/kirovilya/ioBroker.zont.svg?branch=master)](https://travis-ci.org/kirovilya/ioBroker.zont)
+
+[![NPM](https://nodei.co/npm/iobroker.zont.png?downloads=true)](https://nodei.co/npm/iobroker.zont/)
+
 
 ioBroker adapter for https://zont-online.ru service
 
-=================
+Adapter uses Zont-api described [here](https://zont-online.ru/api/docs/).
+It get data about devices and store it as many ioBroker States.
+
+Some States can change by user or ioBroker script. Then it send back to Zont service:
+* thermostat_mode
+* thermostat_ext_mode
+* thermostat_temp
+* guard
+* siren
+* engine_block
+* webasto
+* auto_ignition
+
+-----------------
+
+ioBroker адаптер для сервисов https://zont-online.ru
+
+Адаптер используем Zont-api описанное [здесь](https://zont-online.ru/api/docs/).
+Он получает данные об устойствах и сохраняет их как Состояния ioBroker.
+
+Некоторые Состояния могут изменяться пользователем или скриптами ioBroker. Затем они отправляются обратно в сервис Zont:
+* thermostat_mode
+* thermostat_ext_mode
+* thermostat_temp
+* guard
+* siren
+* engine_block
+* webasto
+* auto_ignition
+
+---------------
 
 ## License
 The MIT License (MIT)
