@@ -8,6 +8,26 @@
 
 [![NPM](https://nodei.co/npm/iobroker.zont.png?downloads=true)](https://nodei.co/npm/iobroker.zont/)
 
+ioBroker адаптер для сервисов https://zont-online.ru
+
+Адаптер используем Zont-api описанное [здесь](https://zont-online.ru/api/docs/).
+Он получает данные об устойствах и сохраняет их как Состояния ioBroker.
+
+Некоторые Состояния могут изменяться пользователем или скриптами ioBroker. Затем они отправляются обратно в сервис Zont:
+* thermostat_mode
+* thermostat_ext_mode
+* thermostat_temp
+* guard
+* siren
+* engine_block
+* webasto
+* auto_ignition
+
+## История изменений
+
+#### 0.5.1 Первая публичная версия
+
+-----------------
 
 ioBroker adapter for https://zont-online.ru service
 
@@ -24,22 +44,10 @@ Some States can change by user or ioBroker script. Then it send back to Zont ser
 * webasto
 * auto_ignition
 
------------------
 
-ioBroker адаптер для сервисов https://zont-online.ru
+## Changelog
 
-Адаптер используем Zont-api описанное [здесь](https://zont-online.ru/api/docs/).
-Он получает данные об устойствах и сохраняет их как Состояния ioBroker.
-
-Некоторые Состояния могут изменяться пользователем или скриптами ioBroker. Затем они отправляются обратно в сервис Zont:
-* thermostat_mode
-* thermostat_ext_mode
-* thermostat_temp
-* guard
-* siren
-* engine_block
-* webasto
-* auto_ignition
+#### 0.5.1 First public version
 
 ---------------
 

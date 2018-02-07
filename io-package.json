@@ -12,11 +12,15 @@
                 "ru": "Первоначальный адаптер"
             }
         },
-        "title": "Microline Zont adapter",
+        "title": "Microline Zont",
         "desc": {
             "en": "ioBroker adapter for https://zont-online.ru service",
             "ru": "ioBroker adapter for https://zont-online.ru service"
         },
+        "license": "MIT",
+        "authors": [
+            "kirovilya@gmail.com"
+        ],
         "platform": "Javascript/Node.js",
         "mode": "daemon",
         "icon": "zont.png",
