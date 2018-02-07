@@ -1,8 +1,12 @@
 {
     "common": {
         "name": "zont",
-        "version": "0.5.1",
+        "version": "0.5.2",
         "news": {
+            "0.5.2": {
+                "en": "public version",
+                "ru": "Публичная версия"
+            },
             "0.5.1": {
                 "en": "beta version",
                 "ru": "Бета версия"

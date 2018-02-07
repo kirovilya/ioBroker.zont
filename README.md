@@ -25,7 +25,7 @@ ioBroker адаптер для сервисов https://zont-online.ru
 
 ## История изменений
 
-#### 0.5.1 Первая публичная версия
+#### 0.5.2 Первая публичная версия
 
 -----------------
 
@@ -47,7 +47,7 @@ Some States can change by user or ioBroker script. Then it send back to Zont ser
 
 ## Changelog
 
-#### 0.5.1 First public version
+#### 0.5.2 First public version
 
 ---------------
 
