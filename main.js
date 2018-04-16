@@ -68,20 +68,20 @@ adapter.on('stateChange', function (id, state) {
             // режим термостата
             case state_name == 'thermostat_mode':
                 new_config = {device_id: dev_id, thermostat_mode: state.val};
-                //adapter.log.info('update request: '+JSON.stringify(new_config));
+                adapter.log.debug('update request: '+JSON.stringify(new_config));
                 requestToZont(PATH_UPDATE, new_config, 
                     function (res, data) {
-                        //adapter.log.info('update response: '+JSON.stringify(data));
+                        adapter.log.debug('update response: '+JSON.stringify(data));
                     }
                 );
                 pollStatus();
                 break;
             case state_name == 'thermostat_ext_mode':
                 new_config = {device_id: dev_id, thermostat_ext_mode: state.val};
-                //adapter.log.info('update request: '+JSON.stringify(new_config));
+                adapter.log.debug('update request: '+JSON.stringify(new_config));
                 requestToZont(PATH_UPDATE, new_config, 
                     function (res, data) {
-                        //adapter.log.info('update response: '+JSON.stringify(data));
+                        adapter.log.debug('update response: '+JSON.stringify(data));
                     }
                 );
                 pollStatus();
@@ -94,19 +94,19 @@ adapter.on('stateChange', function (id, state) {
                     new_config = {device_id: dev_id, thermostat_ext_modes_config: {}};
                     new_config.thermostat_ext_modes_config[parts[1]] = {zone_temp: {}};
                     new_config.thermostat_ext_modes_config[parts[1]].zone_temp[parts[2]] = state.val;
-                    //adapter.log.info('update request: '+JSON.stringify(new_config));
+                    adapter.log.debug('update request: '+JSON.stringify(new_config));
                     requestToZont(PATH_UPDATE, new_config, 
                         function (res, data) {
-                            //adapter.log.info('update response: '+JSON.stringify(data));
+                            adapter.log.debug('update response: '+JSON.stringify(data));
                         }
                     );
                 } else {
                     new_config = {device_id: dev_id, thermostat_mode_temps: {}};
                     new_config.thermostat_mode_temps[parts[1]] = state.val;
-                    //adapter.log.info('update request: '+JSON.stringify(new_config));
+                    adapter.log.debug('update request: '+JSON.stringify(new_config));
                     requestToZont(PATH_UPDATE, new_config, 
                         function (res, data) {
-                            //adapter.log.info('update response: '+JSON.stringify(data));
+                            adapter.log.debug('update response: '+JSON.stringify(data));
                         }
                     );
                 }
@@ -115,10 +115,10 @@ adapter.on('stateChange', function (id, state) {
             // охрана
             case state_name == 'guard':
                 new_config = {device_id: dev_id, portname: 'guard-state', type: 'string', value: (state.val) ? 'enabled' : 'disabled'};
-                //adapter.log.info('ioport request: '+JSON.stringify(new_config));
+                adapter.log.debug('guard request: '+JSON.stringify(new_config));
                 requestToZont(PATH_IOPORT, new_config, 
                     function (res, data) {
-                        //adapter.log.info('ioport response: '+JSON.stringify(data));
+                        adapter.log.debug('guard response: '+JSON.stringify(data));
                     }
                 );
                 pollStatus();
@@ -126,10 +126,10 @@ adapter.on('stateChange', function (id, state) {
             // сирена
             case state_name == 'siren':
                 new_config = {device_id: dev_id, portname: 'siren', type: 'bool', value: state.val};
-                //adapter.log.info('ioport request: '+JSON.stringify(new_config));
+                adapter.log.debug('siren request: '+JSON.stringify(new_config));
                 requestToZont(PATH_IOPORT, new_config, 
                     function (res, data) {
-                        //adapter.log.info('ioport response: '+JSON.stringify(data));
+                        adapter.log.debug('siren response: '+JSON.stringify(data));
                     }
                 );
                 pollStatus();
@@ -137,21 +137,21 @@ adapter.on('stateChange', function (id, state) {
             // блокировка двигателя
             case state_name == 'engine_block':
                 new_config = {device_id: dev_id, portname: 'engine-block', type: 'bool', value: state.val};
-                //adapter.log.info('ioport request: '+JSON.stringify(new_config));
+                adapter.log.info('engine_block request: '+JSON.stringify(new_config));
                 requestToZont(PATH_IOPORT, new_config, 
                     function (res, data) {
-                        //adapter.log.info('ioport response: '+JSON.stringify(data));
+                        adapter.log.debug('engine_block response: '+JSON.stringify(data));
                     }
                 );
                 pollStatus();
                 break;
             // webasto 
-            case state_name == 'webasto':
+            case state_name == 'engine_block':
                 new_config = {device_id: dev_id, portname: 'webasto', type: 'bool', value: state.val};
-                //adapter.log.info('ioport request: '+JSON.stringify(new_config));
+                adapter.log.debug('engine_block request: '+JSON.stringify(new_config));
                 requestToZont(PATH_IOPORT, new_config, 
                     function (res, data) {
-                        //adapter.log.info('ioport response: '+JSON.stringify(data));
+                        adapter.log.debug('engine_block response: '+JSON.stringify(data));
                     }
                 );
                 pollStatus();
@@ -159,10 +159,10 @@ adapter.on('stateChange', function (id, state) {
             // Автозапуск 
             case state_name == 'auto_ignition':
                 new_config = {device_id: dev_id, portname: 'auto-ignition', type: 'bool', value: (state.val) ? 'engine' : 'disabled'};
-                //adapter.log.info('ioport request: '+JSON.stringify(new_config));
+                adapter.log.debug('auto_ignition request: '+JSON.stringify(new_config));
                 requestToZont(PATH_IOPORT, new_config, 
                     function (res, data) {
-                        //adapter.log.info('ioport response: '+JSON.stringify(data));
+                        adapter.log.debug('auto_ignition response: '+JSON.stringify(data));
                     }
                 );
                 pollStatus();
@@ -256,12 +256,12 @@ function connectToZont(username, password, callback){
         password = adapter.config.password;
     }
     if (username) {
-        //adapter.log.info('try to connect to zont-online '+username);
+        adapter.log.debug('try to connect to zont-online '+username);
         requestToZont(PATH_DEVICES, null, function (res, data) {
-            //adapter.log.info('statusCode: ' + res.statusCode);
-            //adapter.log.info('statusMessage: ' + res.statusMessage);
-            //adapter.log.info('headers: ' + JSON.stringify(res.headers));
-            //adapter.log.info(JSON.stringify(data));
+            adapter.log.debug('statusCode: ' + res.statusCode);
+            adapter.log.debug('statusMessage: ' + res.statusMessage);
+            adapter.log.debug('headers: ' + JSON.stringify(res.headers));
+            adapter.log.debug(JSON.stringify(data));
             if (callback) {
                 if (res.statusCode == 200) {
                     callback('ok');
@@ -433,7 +433,7 @@ function processTermDev(dev_obj_name, data) {
             ot = data['io']['ot_state'],
             state_name = dev_obj_name + '.';
         // расширенный режим
-        if (hasElement(capa, "has_extmodes")) {
+        if (hasElement(capa, "has_extmodes") || data['thermostat_ext_modes_config']) {
             let modes = [], obj = data['thermostat_ext_modes_config'];
             for (let p in obj) {
                 if(obj.hasOwnProperty(p)) {

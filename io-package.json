@@ -1,8 +1,12 @@
 {
     "common": {
         "name": "zont",
-        "version": "0.5.2",
+        "version": "0.5.3",
         "news": {
+            "0.5.3": {
+                "en": "Update H-1 thermostat",
+                "ru": "Обновлена работа H-1 термостата"
+            },
             "0.5.2": {
                 "en": "public version",
                 "ru": "Публичная версия"

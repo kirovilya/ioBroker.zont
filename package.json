@@ -1,6 +1,6 @@
 {
   "name": "iobroker.zont",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "description": "ioBroker Microline Zont Adapter",
   "author": {
     "name": "Kirov Ilya",
