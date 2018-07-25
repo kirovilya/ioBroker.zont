@@ -37,7 +37,7 @@
         "keywords": ["zont"],
         "readme": "https://github.com/kirovilya/ioBroker.zont/blob/master/README.md",
         "loglevel": "info",
-        "type": "communication",
+        "type": "climate-control",
         "messagebox": true
     },
     "native": {
