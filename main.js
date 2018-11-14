@@ -72,9 +72,9 @@ adapter.on('stateChange', function (id, state) {
                 requestToZont(PATH_UPDATE, new_config, 
                     function (res, data) {
                         adapter.log.debug('update response: '+JSON.stringify(data));
+                        pollStatus();
                     }
                 );
-                pollStatus();
                 break;
             case state_name == 'thermostat_ext_mode':
                 new_config = {device_id: dev_id, thermostat_ext_mode: state.val};
@@ -82,9 +82,9 @@ adapter.on('stateChange', function (id, state) {
                 requestToZont(PATH_UPDATE, new_config, 
                     function (res, data) {
                         adapter.log.debug('update response: '+JSON.stringify(data));
+                        pollStatus();
                     }
                 );
-                pollStatus();
                 break;
             // температура режимов
             case state_name.startsWith('thermostat_temp'):
@@ -98,6 +98,7 @@ adapter.on('stateChange', function (id, state) {
                     requestToZont(PATH_UPDATE, new_config, 
                         function (res, data) {
                             adapter.log.debug('update response: '+JSON.stringify(data));
+                            pollStatus();
                         }
                     );
                 } else {
@@ -107,10 +108,10 @@ adapter.on('stateChange', function (id, state) {
                     requestToZont(PATH_UPDATE, new_config, 
                         function (res, data) {
                             adapter.log.debug('update response: '+JSON.stringify(data));
+                            pollStatus();
                         }
                     );
                 }
-                pollStatus();
                 break;
             // охрана
             case state_name == 'guard':
@@ -119,9 +120,9 @@ adapter.on('stateChange', function (id, state) {
                 requestToZont(PATH_IOPORT, new_config, 
                     function (res, data) {
                         adapter.log.debug('guard response: '+JSON.stringify(data));
+                        setTimeout(()=>{pollStatus()}, 3000);
                     }
                 );
-                pollStatus();
                 break;
             // сирена
             case state_name == 'siren':
@@ -130,9 +131,9 @@ adapter.on('stateChange', function (id, state) {
                 requestToZont(PATH_IOPORT, new_config, 
                     function (res, data) {
                         adapter.log.debug('siren response: '+JSON.stringify(data));
+                        setTimeout(()=>{pollStatus()}, 3000);
                     }
                 );
-                pollStatus();
                 break;
             // блокировка двигателя
             case state_name == 'engine_block':
@@ -141,31 +142,36 @@ adapter.on('stateChange', function (id, state) {
                 requestToZont(PATH_IOPORT, new_config, 
                     function (res, data) {
                         adapter.log.debug('engine_block response: '+JSON.stringify(data));
+                        setTimeout(()=>{pollStatus()}, 3000);
                     }
                 );
-                pollStatus();
                 break;
             // webasto 
-            case state_name == 'engine_block':
+            case state_name == 'webasto':
                 new_config = {device_id: dev_id, portname: 'webasto', type: 'bool', value: state.val};
-                adapter.log.debug('engine_block request: '+JSON.stringify(new_config));
+                adapter.log.debug('webasto request: '+JSON.stringify(new_config));
                 requestToZont(PATH_IOPORT, new_config, 
                     function (res, data) {
-                        adapter.log.debug('engine_block response: '+JSON.stringify(data));
+                        adapter.log.debug('webasto response: '+JSON.stringify(data));
+                        setTimeout(()=>{pollStatus()}, 3000);
                     }
                 );
-                pollStatus();
                 break;
             // Автозапуск 
             case state_name == 'auto_ignition':
-                new_config = {device_id: dev_id, portname: 'auto-ignition', type: 'bool', value: (state.val) ? 'engine' : 'disabled'};
+                // если это логическое значение
+                if (typeof state.val == 'boolean') {
+                    new_config = {device_id: dev_id, portname: 'auto-ignition', type: 'bool', value: (state.val) ? 'engine' : 'disabled'};
+                } else {
+                    new_config = {device_id: dev_id, portname: 'auto-ignition', type: 'auto-ignition', value: {state: state.val}};
+                }
                 adapter.log.debug('auto_ignition request: '+JSON.stringify(new_config));
                 requestToZont(PATH_IOPORT, new_config, 
                     function (res, data) {
                         adapter.log.debug('auto_ignition response: '+JSON.stringify(data));
+                        setTimeout(()=>{pollStatus()}, 3000);
                     }
                 );
-                pollStatus();
                 break;
         }
     }
@@ -354,7 +360,7 @@ function pollStatus(dev) {
         }
         // список устройств
         requestToZont(PATH_DEVICES, {load_io: true}, function (res, data) {
-            //adapter.log.info(JSON.stringify(data));
+            adapter.log.debug(JSON.stringify(data));
             for (var i = 0; i < data['devices'].length; i++) {
                 var dev = data['devices'][i],
                     dev_id = dev['id'],
@@ -628,7 +634,17 @@ function processAutoDev(dev_obj_name, data) {
     if (hasElement(capa, "has_webasto") && io['webasto'] != undefined) {
         updateState(state_name+'webasto', 'Предпусковой подогреватель (webasto)', io['webasto'], {type: 'boolean', write: true});
     }
-    if (hasElement(capa, "has_autostart")) {
+    if (hasElement(capa, "has_ztcconfig_autostart")) {
+        if (io['auto-ignition'] != undefined) {
+            var modesa = 'disabled:Отключен;enabled:Запуск;engine:Запуск двигателя;webasto:Предпусковой';
+            updateState(state_name+'auto_ignition', 'Автозапуск', undefined, {type: 'string', states: modesa, write: true});
+            var modess = 'disabled:Отключен;enabling:Запуск двигателя;enabled:Запущен;webasto:Предпусковой;webasto-confirmed:Подтверждено';
+            updateState(state_name+'auto_ignition_state', 'Состояние автозапуска', io['auto-ignition']['state'], {type: 'string', states: modess});
+            //updateState(state_name+'auto_engine', 'Автозапуск двигателя', io['auto-ignition']['current_mode']['engine'], {type: 'boolean'});
+            //updateState(state_name+'auto_webasto', 'Предпусковой подогреватель (webasto)', io['auto-ignition']['current_mode']['webasto'], {type: 'boolean'});
+            updateState(state_name+'auto_until', 'Время отключения автозапуска', io['auto-ignition']['until'], {type: 'number'});
+        }
+    } else if (hasElement(capa, "has_autostart")) {
         if (io['auto-ignition'] != undefined) {
             updateState(state_name+'auto_ignition', 'Автозапуск', io['auto-ignition']['state'], {type: 'boolean', write: true});
         }
