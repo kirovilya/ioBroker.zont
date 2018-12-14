@@ -86,6 +86,22 @@ adapter.on('stateChange', function (id, state) {
                     }
                 );
                 break;
+            // температура зон
+            case state_name.startsWith('target_temp__'):
+                let prts = state_name.split('__');
+                // значит есть зоны
+                if (prts.length > 1) {
+                    new_config = {device_id: dev_id, thermostat_target_temps: {}};
+                    new_config.thermostat_target_temps[prts[1]] = {temp: state.val};
+                    adapter.log.debug('update request: '+JSON.stringify(new_config));
+                    requestToZont(PATH_UPDATE, new_config, 
+                        function (res, data) {
+                            adapter.log.debug('update response: '+JSON.stringify(data));
+                            pollStatus();
+                        }
+                    );
+                }
+                break;
             // температура режимов
             case state_name.startsWith('thermostat_temp'):
                 let parts = state_name.split('__');
@@ -249,7 +265,7 @@ function requestToZont(path, data, success, failure, user, pass) {
     });
     if (data) {
         r.write(postData);
-        //adapter.log.info(postData);
+        adapter.log.debug(postData);
     }
     r.end();
 }
@@ -435,7 +451,7 @@ function processTermDev(dev_obj_name, data) {
 
     // термостат
     if (hasElement(capa, "has_thermostat")) {
-        let term = data['io']['last-boiler-state'],
+        let term = data['io']['last-boiler-state'] || data,
             ot = data['io']['ot_state'],
             state_name = dev_obj_name + '.';
         // расширенный режим
@@ -469,6 +485,16 @@ function processTermDev(dev_obj_name, data) {
         if (!term) return;
         if (term['target_temp'] != undefined) {
             updateState(state_name+'target_temp', 'Целевая температура', term['target_temp'], {type: 'number', unit: '°', write: false});
+        }
+        // новый способ регулировки целевой температуры
+        if (term['thermostat_target_temps'] != undefined) {
+            let obj = term['thermostat_target_temps'];
+            for (let p in obj) {
+                if(obj.hasOwnProperty(p)) {
+                    let mode = obj[p];
+                    updateState(state_name + 'target_temp__'+p, 'Целевая температура зоны ('+p+')', mode.temp, {type: 'number', unit: '°', write: true});
+                }
+            }
         }
 
         if (term['boiler_work_time'] != undefined) {
