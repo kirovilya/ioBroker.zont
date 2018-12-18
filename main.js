@@ -358,8 +358,17 @@ function updateState(id, name, value, common) {
             new_common.states = common.states;
         }
     }
-    adapter.extendObject(id, {type: 'state', common: new_common});
-    adapter.setState(id, value, true);
+    adapter.getObject(id, (err, obj) => {
+        if (obj) {
+            delete new_common.name;
+            delete new_common.role;
+        }
+        adapter.extendObject(id, {type: 'state', common: new_common}, () => {
+            if (value !== undefined) {
+                adapter.setState(id, value, true);
+            }
+        });
+    });
 }
 
 
