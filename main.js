@@ -683,9 +683,9 @@ function processAutoDev(dev_obj_name, data) {
         if (io['auto-ignition'] != undefined) {
             updateState(state_name+'auto_ignition', 'Автозапуск', io['auto-ignition']['state'], {type: 'boolean', write: true});
         }
-        if (io['ignition-state'] != undefined) {
-            updateState(state_name+'ignition_state', 'Двигатель запущен', io['ignition-state'], {type: 'boolean'});
-        }
+    }
+    if (io['ignition-state'] != undefined) {
+        updateState(state_name+'ignition_state', 'Двигатель запущен', io['ignition-state'], {type: 'boolean'});
     }
     if (hasElement(capa, "has_voltage_sensor") && io['voltage'] != undefined) {
         updateState(state_name+'voltage', 'Напряжение питания', io['voltage'], {type: 'number', unit: 'V'});
