@@ -25,6 +25,7 @@
     "url": "https://github.com/kirovilya/ioBroker.zont"
   },
   "dependencies": {
+    "@iobroker/adapter-core": "^1.0.3"
   },
   "devDependencies": {
     "gulp": "^3.9.1",
