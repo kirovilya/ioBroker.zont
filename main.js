@@ -435,8 +435,10 @@ function pollStatus(dev) {
 function processCustomControls(dev_obj_name, data) {
     let capa = data['capabilities'];
     if (hasElement(capa, "has_custom_controls_schedule")) {
-        for (let i = 0; i < data['custom_controls'].length; i++) {
-            let control = data['custom_controls'][i];
+        if (hasElement(capa, 'custom_controls')) {
+            for (let i = 0; i < data['custom_controls'].length; i++) {
+                let control = data['custom_controls'][i];
+            }
         }
     }
 }
@@ -445,15 +447,17 @@ function processTermDev(dev_obj_name, data) {
     let capa = data['capabilities'];
     // термометры
     if (hasElement(capa, "has_thermometer_functions")) {
-        for (let j = 0; j < data['thermometers'].length; j++) {
-            let term = data['thermometers'][j],
-                term_id = term['uuid'],
-                term_name = term['name'],
-                enabled = term['is_assigned_to_slot'],
-                state_name = dev_obj_name + '.' + 'therm_' + term_id,
-                state_val = term['last_value'];
-            if (enabled) {
-                updateState(state_name, term_name, state_val, {type: 'number', unit: '°'});
+        if (hasElement(capa, 'thermometers')) {
+            for (let j = 0; j < data['thermometers'].length; j++) {
+                let term = data['thermometers'][j],
+                    term_id = term['uuid'],
+                    term_name = term['name'],
+                    enabled = term['is_assigned_to_slot'],
+                    state_name = dev_obj_name + '.' + 'therm_' + term_id,
+                    state_val = term['last_value'];
+                if (enabled) {
+                    updateState(state_name, term_name, state_val, {type: 'number', unit: '°'});
+                }
             }
         }
     }
