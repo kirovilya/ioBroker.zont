@@ -12,7 +12,8 @@ const PATH_DEVICES = '/api/devices',
       PATH_LOADDATA = '/api/load_data',
       PATH_UPDATE = '/api/update_device',
       PATH_IOPORT = '/api/set_io_port',
-      PATH_Z3K_UPDATE = '/api/send_z3k_command';
+      PATH_Z3K_UPDATE = '/api/send_z3k_command',
+      BATTERY_DEFAULT_VOLTAGE = 3;
 
 
 // you have to require the utils module and call adapter function
@@ -501,6 +502,17 @@ function processCustomControls(dev_obj_name, data) {
     }
 }
 
+function getBatteryState(volt) {
+    if (volt != null) {
+        let realBattery = volt*(BATTERY_DEFAULT_VOLTAGE/100)*1000;
+        if (realBattery > 100) {
+            realBattery = 100;
+        }
+        return realBattery;
+    }
+    return 0;
+}
+
 function processTermDev(dev_obj_name, data) {
     let capa = data['capabilities'];
     // термометры
@@ -567,10 +579,14 @@ function processTermDev(dev_obj_name, data) {
                     state_name = dev_obj_name + '.' + 'radio.therm_' + term_id,
                     state_val = z3kStateObj['temperature'],
                     battery = z3kStateObj['battery'],
+                    humidity = z3kStateObj['humidity'],
                     rssi = z3kStateObj['rssi'];
+                    adapter.log.info(JSON.stringify(z3kStateObj));
+                    let real_battery = getBatteryState(battery)
                 if (enabled) {
                     updateState(state_name, term_name, state_val, {type: 'number', unit: '°'});
-                    updateState(state_name + '.battery', term_name, battery, {type: 'number', unit: '%'});
+                    updateState(state_name + '.battery', term_name, real_battery, {type: 'number', unit: '%'});
+                    updateState(state_name + '.humidity', term_name, humidity, {type: 'number', unit: '%'});
                     updateState(state_name + '.rssi', term_name, rssi, {type: 'number', unit: 'dbi'});
                 }
             }
