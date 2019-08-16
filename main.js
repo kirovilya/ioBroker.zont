@@ -11,7 +11,8 @@
 const PATH_DEVICES = '/api/devices',
       PATH_LOADDATA = '/api/load_data',
       PATH_UPDATE = '/api/update_device',
-      PATH_IOPORT = '/api/set_io_port';
+      PATH_IOPORT = '/api/set_io_port',
+      PATH_Z3K_UPDATE = '/api/send_z3k_command';
 
 
 // you have to require the utils module and call adapter function
@@ -27,6 +28,17 @@ var adapter = utils.adapter('zont');
 function hasElement(array, value){
     return array.indexOf( value ) != -1;
 }
+
+Array.prototype.getLastElement = function() {
+    return this[this.length-1];
+}
+
+
+// let's declare global heating objects
+let heatingCircuits = {}
+let heatingModes = {}
+let heatingZones = {}
+
 
 // is called when adapter shuts down - callback has to be called under any circumstances!
 adapter.on('unload', function (callback) {
@@ -65,6 +77,52 @@ adapter.on('stateChange', function (id, state) {
         let state_name = id.split('.')[3];
         let new_config;
         switch (true) {
+            // ZONT H-2000+
+            case state_name == 'heatingCircuits':
+
+                let idArray = id.split('.');
+                let circuitId = idArray[4].split('_').getLastElement();
+                let param = 'state';
+                if (idArray.length > 5) {
+                    param = idArray[idArray.length - 1]
+                }
+                let new_config = {};
+                if (param == 'target_temp') {
+                    new_config = {
+                        device_id: Number(dev_id),
+                        "command_name":"TargetTemperature",
+                        "object_id":Number(circuitId),
+                        "command_args":{"value": Number(state.val)},
+                        "request_time":true,
+                        "is_guaranteed":true,
+                    };
+                }
+                if (param == 'state') {
+                    for (let mode in heatingModes){
+                        if(heatingModes[mode]['circuit_on'] && circuitId == heatingModes[mode]['circuit_on'] && state.val == 1) {
+                            circuitId = mode
+                        }
+                        if(heatingModes[mode]['circuit_off'] && circuitId == heatingModes[mode]['circuit_off'] && state.val == 0) {
+                            circuitId = mode
+                        }
+                    }
+                    new_config = {
+                        device_id: Number(dev_id),
+                        'object_id': Number(circuitId),
+                        'command_name':'SelectHeatingMode',
+                        'command_args':null,
+                        'is_guaranteed':false,
+                        'request_time':true,
+                    };
+                }
+                requestToZont(PATH_Z3K_UPDATE, new_config,
+                    function (res, data) {
+                        adapter.log.debug('update response: '+JSON.stringify(data));
+                        pollStatus();
+                    }
+                );
+                break;
+
             // режим термостата
             case state_name == 'thermostat_mode':
                 new_config = {device_id: dev_id, thermostat_mode: state.val};
@@ -458,6 +516,85 @@ function processTermDev(dev_obj_name, data) {
                 if (enabled) {
                     updateState(state_name, term_name, state_val, {type: 'number', unit: '°'});
                 }
+            }
+        }
+    }
+    // zont-H2000+ (z3k) and possible H-1000/2000
+    if (hasElement(capa, 'has_z3k_settings')) {
+        // radio
+        let radioSensors = {};
+        if (hasElement(capa, 'has_rf')) {
+            for (var sensor in data['z3k_config']['radiosensors']) {
+                radioSensors[data['z3k_config']['radiosensors'][sensor]['id']] = data['z3k_config']['radiosensors'][sensor]['name']
+            }
+        }
+        let wiredSensors = {};
+        if (data['z3k_config']['radiosensors']){
+            for (var sensor in data['z3k_config']['wired_temperature_sensors']) {
+                wiredSensors[data['z3k_config']['wired_temperature_sensors'][sensor]['id']] = data['z3k_config']['wired_temperature_sensors'][sensor]['name']
+            }
+        }
+
+        if (hasElement(capa, 'has_thermostat')){
+            for (let element in data['z3k_config']['heating_circuits']) {
+                heatingCircuits[data['z3k_config']['heating_circuits'][element]['id']] = data['z3k_config']['heating_circuits'][element]['name']
+            }
+            for (let element in data['z3k_config']['heating_modes']) {
+                heatingModes[data['z3k_config']['heating_modes'][element]['id']] = {
+                    'name': data['z3k_config']['heating_modes'][element]['name']
+                }
+                for (let zone in data['z3k_config']['heating_modes'][element]['heating_zones']) {
+                    if (data['z3k_config']['heating_modes'][element]['heating_zones'][zone]['heating_circuit'] != undefined) {
+                        if (Object.keys(heatingCircuits).includes(data['z3k_config']['heating_modes'][element]['heating_zones'][zone]['heating_circuit'].toString()) ){
+                            if (data['z3k_config']['heating_modes'][element]['heating_zones'][zone]['adjusting_sensor'] != null) {
+                                heatingModes[data['z3k_config']['heating_modes'][element]['id']]["circuit_on"] = data['z3k_config']['heating_modes'][element]['heating_zones'][zone]['heating_circuit'];
+                            }
+                            if (data['z3k_config']['heating_modes'][element]['heating_zones'][zone]['adjusting_sensor'] == null) {
+                                heatingModes[data['z3k_config']['heating_modes'][element]['id']]["circuit_off"] = data['z3k_config']['heating_modes'][element]['heating_zones'][zone]['heating_circuit'];
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        for (let element in data['io']['z3k-state']) {
+            let z3kStateObj = data['io']['z3k-state'][element];
+            if (element in radioSensors){
+                let term_id = element,
+                    term_name = radioSensors[element],
+                    enabled = z3kStateObj['sensor_ok'],
+                    state_name = dev_obj_name + '.' + 'radio.therm_' + term_id,
+                    state_val = z3kStateObj['temperature'],
+                    battery = z3kStateObj['battery'],
+                    rssi = z3kStateObj['rssi'];
+                if (enabled) {
+                    updateState(state_name, term_name, state_val, {type: 'number', unit: '°'});
+                    updateState(state_name + '.battery', term_name, battery, {type: 'number', unit: '%'});
+                    updateState(state_name + '.rssi', term_name, rssi, {type: 'number', unit: 'dbi'});
+                }
+            }
+            if (element in wiredSensors){
+                let term_id = element,
+                    term_name = wiredSensors[element],
+                    enabled = z3kStateObj['sensor_ok'],
+                    state_name = dev_obj_name + '.' + 'wired.therm_' + term_id,
+                    state_val = z3kStateObj['curr_temp'];
+                if (enabled) {
+                    updateState(state_name, term_name, state_val, {type: 'number', unit: '°'});
+                }
+            }
+            if (element in heatingCircuits) {
+                let term_id = element,
+                    term_name = heatingCircuits[element],
+                    state_name = dev_obj_name + '.' + 'heatingCircuits.circuit_' + term_id,
+                    status = z3kStateObj['status'],
+                    target_temp = z3kStateObj['target_temp'];
+                updateState(state_name, term_name, status, {type: 'number', unit: ''});
+                if (target_temp == null){
+                    target_temp = 0
+                }
+                updateState(state_name + '.target_temp', term_name, target_temp, {type: 'number', unit: '°'});
             }
         }
     }
