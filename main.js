@@ -85,9 +85,8 @@ adapter.on('stateChange', function (id, state) {
                 let circuitId = idArray[4].split('_').getLastElement();
                 let param = 'state';
                 if (idArray.length > 5) {
-                    param = idArray[idArray.length - 1]
+                    param = idArray[idArray.length - 1];
                 }
-                let new_config = {};
                 if (param == 'target_temp') {
                     new_config = {
                         device_id: Number(dev_id),
@@ -101,10 +100,10 @@ adapter.on('stateChange', function (id, state) {
                 if (param == 'state') {
                     for (let mode in heatingModes){
                         if(heatingModes[mode]['circuit_on'] && circuitId == heatingModes[mode]['circuit_on'] && state.val == 1) {
-                            circuitId = mode
+                            circuitId = mode;
                         }
                         if(heatingModes[mode]['circuit_off'] && circuitId == heatingModes[mode]['circuit_off'] && state.val == 0) {
-                            circuitId = mode
+                            circuitId = mode;
                         }
                     }
                     new_config = {
