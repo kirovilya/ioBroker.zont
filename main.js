@@ -849,6 +849,7 @@ function processAutoDev(dev_obj_name, data) {
     // температурные сенсоры
     if (hasElement(capa, "has_temperature_sensors") && io['temperature'] && io['temperature'].length > 0) {
         for (let i = 0; i < data['temperature_conf']['assignments'].length; i++){
+            if (io['temperature'][i] === null) continue;
             let ttype = data['temperature_conf']['assignments'][i],
                 val = io['temperature'][i].value;
             switch(ttype) {
