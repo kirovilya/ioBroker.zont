@@ -273,7 +273,6 @@ adapter.on('message', function (obj) {
                 break;
         }
     }
-    processMessages();
 });
 
 
@@ -367,16 +366,6 @@ function connectToZont(username, password, callback){
 adapter.on('ready', function () {
     main();
 });
-
-
-function processMessages(ignore) {
-    adapter.getMessage(function (err, obj) {
-        if (obj) {
-            if (!ignore && obj && obj.command == 'send') processMessage(obj.message);
-            processMessages();
-        }
-    });
-}
 
 
 // Because the only one port is occupied by first instance, the changes to other devices will be send with messages
@@ -887,6 +876,4 @@ function main() {
 
     // in this template all states changes inside the adapters namespace are subscribed
     adapter.subscribeStates('*');
-
-    processMessages(true);
 }
