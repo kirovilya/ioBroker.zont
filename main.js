@@ -505,7 +505,7 @@ function processTermDev(dev_obj_name, data) {
     let capa = data['capabilities'];
     // термометры
     if (hasElement(capa, "has_thermometer_functions")) {
-        if (hasElement(capa, 'has_multiple_thermometers')) {
+        if (hasElement(capa, 'has_multiple_thermometers' && data['thermometers'])) {
             for (let j = 0; j < data['thermometers'].length; j++) {
                 let term = data['thermometers'][j],
                     term_id = term['uuid'],
