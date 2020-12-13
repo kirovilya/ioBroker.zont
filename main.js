@@ -150,7 +150,7 @@ adapter.on('stateChange', function (id, state) {
                 // значит есть зоны
                 if (prts.length > 1) {
                     new_config = {device_id: dev_id, thermostat_target_temps: {}};
-                    new_config.thermostat_target_temps[prts[1]] = {temp: state.val};
+                    new_config.thermostat_target_temps[prts[1]] = {manual: true, temp: state.val};
                     adapter.log.debug('update request: '+JSON.stringify(new_config));
                     requestToZont(PATH_UPDATE, new_config, 
                         function (res, data) {
@@ -641,12 +641,12 @@ function processTermDev(dev_obj_name, data) {
             updateState(state_name+'target_temp', 'Целевая температура', term['target_temp'], {type: 'number', unit: '°', write: false});
         }
         // новый способ регулировки целевой температуры
-        if (term['thermostat_target_temps'] != undefined) {
-            let obj = term['thermostat_target_temps'];
+        if (term['zones'] != undefined) {
+            let obj = term['zones'];
             for (let p in obj) {
                 if(obj.hasOwnProperty(p)) {
                     let mode = obj[p];
-                    updateState(state_name + 'target_temp__'+p, 'Целевая температура зоны ('+p+')', mode.temp, {type: 'number', unit: '°', write: true});
+                    updateState(state_name + 'target_temp__'+p, 'Целевая температура зоны ('+p+')', mode.target_temp, {type: 'number', unit: '°', write: true});
                 }
             }
         }
