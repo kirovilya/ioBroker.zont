@@ -664,10 +664,10 @@ function processTermDev(dev_obj_name, data) {
             updateState(state_name+'dhw_t', 'Заданная температура ГВС', term['dhw_t'], {type: 'number', unit: '°'});
         }
         if (term['power'] != undefined) {
-            updateState(state_name+'power', 'Наличие питания', term['power']);
+            updateState(state_name+'power', 'Наличие питания', term['power'], {type: 'string'});
         }
         if (term['fail'] != undefined) {
-            updateState(state_name+'fail', 'Авария котла', term['fail']);
+            updateState(state_name+'fail', 'Авария котла', term['fail'], {type: 'string'});
         }
         // OT
         if (data['ot_enabled'] != undefined) {
@@ -859,7 +859,7 @@ function processAutoDev(dev_obj_name, data) {
         updateState(state_name+'gps_x', 'GPS X', last_gps.x, {type: 'number'});
         updateState(state_name+'gps_y', 'GPS Y', last_gps.y, {type: 'number'});
         updateState(state_name+'gps_speed', 'GPS Скорость', last_gps.speed, {type: 'number'});
-        updateState(state_name+'gps_time', 'GPS Время последих показаний', last_gps.time);
+        updateState(state_name+'gps_time', 'GPS Время последих показаний', last_gps.time, {type: 'number'});
     }
 }
 
