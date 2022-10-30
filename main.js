@@ -459,7 +459,7 @@ function pollStatus(dev) {
                     updateState(obj_name + '.siren', 'Сирена', dev['io']['siren'], {type: 'boolean', write: true});
                 }
                 if (hasElement(capa, "has_gsm")) {
-                    if (hasElement(capa, "has_gsm_balance")) {
+                    if (hasElement(capa, "has_gsm_balance") && dev['balance']) {
                         updateState(obj_name + '.gsm_balance', 'GSM Баланс', dev['balance'].value, {type: 'number', unit: 'руб'});
                     }
                     let gsm_state = dev['io']['gsm-state'];
