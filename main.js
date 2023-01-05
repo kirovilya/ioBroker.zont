@@ -594,7 +594,7 @@ function processTermDev(dev_obj_name, data) {
                     state_name = dev_obj_name + '.' + 'heatingCircuits.circuit_' + term_id,
                     status = z3kStateObj['status'],
                     target_temp = z3kStateObj['target_temp'];
-                updateState(state_name, term_name, status, {type: 'number', unit: ''});
+                updateState(state_name + '.status', term_name, JSON.stringify(status), {type: 'string'});
                 if (target_temp == null){
                     target_temp = 0
                 }
