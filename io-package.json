@@ -40,6 +40,7 @@
         "keywords": ["zont"],
         "readme": "https://github.com/kirovilya/ioBroker.zont/blob/master/README.md",
         "loglevel": "info",
+        "tier": 2,
         "type": "climate-control",
         "messagebox": true
     },
