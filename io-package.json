@@ -28,7 +28,10 @@
             "en": "ioBroker adapter for https://zont-online.ru service",
             "ru": "ioBroker adapter for https://zont-online.ru service"
         },
-        "license": "MIT",
+        "licenseInformation": {
+            "type": "free",
+            "license": "MIT"
+        },
         "authors": [
             "kirovilya@gmail.com"
         ],
