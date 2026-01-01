@@ -58,7 +58,7 @@ Some States can change by user or ioBroker script. Then it send back to Zont ser
 ## License
 The MIT License (MIT)
 
-Copyright (c) 2017 Kirov Ilya <kirovilya@gmail.com>
+Copyright (c) 2017-2026 Kirov Ilya <kirovilya@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
