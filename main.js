@@ -18,7 +18,7 @@ const PATH_DEVICES = '/api/devices',
 
 // you have to require the utils module and call adapter function
 var utils = require('@iobroker/adapter-core'); // Get common adapter utils
-var http  = require('https');
+var http  = require('node:https');
 
 // you have to call the adapter function and pass a options object
 // name has to be set and has to be equal to adapters folder name and main file name excluding extension
