@@ -55,6 +55,8 @@ Some States can change by user or ioBroker script. Then it send back to Zont ser
 
 ---------------
 
+[Older changelogs can be found there](CHANGELOG_OLD.md)
+
 ## License
 The MIT License (MIT)
 
