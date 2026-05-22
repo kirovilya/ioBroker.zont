@@ -49,6 +49,10 @@ Some States can change by user or ioBroker script. Then it send back to Zont ser
 
 ## Changelog
 
+### **WORK IN PROGRESS**
+- (ioBroker-Bot) Adapter requires js-controller >= 6.0.11 now.
+
+
 #### 0.5.3 Update H-1 thermostat
 
 #### 0.5.2 First public version

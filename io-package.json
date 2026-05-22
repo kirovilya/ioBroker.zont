@@ -1,74 +1,81 @@
 {
-    "common": {
-        "name": "zont",
-        "version": "0.5.4",
-        "news": {
-            "0.5.4": {
-                "ru": "Адаптация к изменениям api"
-            },
-            "0.5.3": {
-                "en": "Update H-1 thermostat",
-                "ru": "Обновлена работа H-1 термостата"
-            },
-            "0.5.2": {
-                "en": "public version",
-                "ru": "Публичная версия"
-            },
-            "0.5.1": {
-                "en": "beta version",
-                "ru": "Бета версия"
-            },
-            "0.0.1": {
-                "en": "initial adapter",
-                "ru": "Первоначальный адаптер"
-            }
-        },
-        "title": "Microline Zont",
-        "desc": {
-            "en": "ioBroker adapter for https://zont-online.ru service",
-            "ru": "ioBroker adapter for https://zont-online.ru service"
-        },
-        "license": "MIT",
-        "authors": [
-            "kirovilya@gmail.com"
-        ],
-        "platform": "Javascript/Node.js",
-        "mode": "daemon",
-        "icon": "zont.png",
-        "enabled": true,
-        "extIcon": "https://raw.githubusercontent.com/kirovilya/ioBroker.zont/master/admin/zont.png",
-        "keywords": ["zont"],
-        "readme": "https://github.com/kirovilya/ioBroker.zont/blob/master/README.md",
-        "loglevel": "info",
-        "type": "climate-control",
-        "messagebox": true
+  "common": {
+    "name": "zont",
+    "version": "0.5.4",
+    "news": {
+      "0.5.4": {
+        "ru": "Адаптация к изменениям api"
+      },
+      "0.5.3": {
+        "en": "Update H-1 thermostat",
+        "ru": "Обновлена работа H-1 термостата"
+      },
+      "0.5.2": {
+        "en": "public version",
+        "ru": "Публичная версия"
+      },
+      "0.5.1": {
+        "en": "beta version",
+        "ru": "Бета версия"
+      },
+      "0.0.1": {
+        "en": "initial adapter",
+        "ru": "Первоначальный адаптер"
+      }
     },
-    "native": {
-        "username": "",
-        "password": "",
-        "pollInterval": 60
+    "title": "Microline Zont",
+    "desc": {
+      "en": "ioBroker adapter for https://zont-online.ru service",
+      "ru": "ioBroker adapter for https://zont-online.ru service"
     },
-    "instanceObjects": [
-        {
-            "_id":  "info",
-            "type": "channel",
-            "common": {
-                "name": "Information"
-            },
-            "native": {}
-        },
-        {
-            "_id":  "info.connection",
-            "type": "state",
-            "common": {
-                "role":  "indicator.connected",
-                "name":  "If connected to Zont-online",
-                "type":  "boolean",
-                "read":  true,
-                "write": false,
-                "def":   false
-            },
-            "native": {}
-        }
+    "license": "MIT",
+    "authors": [
+      "kirovilya@gmail.com"
+    ],
+    "platform": "Javascript/Node.js",
+    "mode": "daemon",
+    "icon": "zont.png",
+    "enabled": true,
+    "extIcon": "https://raw.githubusercontent.com/kirovilya/ioBroker.zont/master/admin/zont.png",
+    "keywords": [
+      "zont"
+    ],
+    "readme": "https://github.com/kirovilya/ioBroker.zont/blob/master/README.md",
+    "loglevel": "info",
+    "type": "climate-control",
+    "messagebox": true,
+    "dependencies": [
+      {
+        "js-controller": ">=6.0.11"
+      }
     ]
+  },
+  "native": {
+    "username": "",
+    "password": "",
+    "pollInterval": 60
+  },
+  "instanceObjects": [
+    {
+      "_id": "info",
+      "type": "channel",
+      "common": {
+        "name": "Information"
+      },
+      "native": {}
+    },
+    {
+      "_id": "info.connection",
+      "type": "state",
+      "common": {
+        "role": "indicator.connected",
+        "name": "If connected to Zont-online",
+        "type": "boolean",
+        "read": true,
+        "write": false,
+        "def": false
+      },
+      "native": {}
+    }
+  ]
 }
